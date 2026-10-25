@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
-import { Target, TrendingUp, ArrowUpRight } from 'lucide-react-native';
+import { Target, TrendingUp, ArrowUpRight, Plus } from 'lucide-react-native';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -113,6 +113,14 @@ export default function DashboardScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Floating Add Action Button */}
+      <Pressable
+        onPress={() => router.push('/(modal)/new-transaction')}
+        className="absolute bottom-6 right-6 bg-[#22C55E] w-14 h-14 rounded-full items-center justify-center shadow-2xl active:opacity-80"
+      >
+        <Plus size={26} color="#000000" strokeWidth={2.5} />
+      </Pressable>
     </SafeAreaView>
   );
 }

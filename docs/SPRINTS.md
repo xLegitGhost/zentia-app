@@ -68,10 +68,10 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-201** | Hook `useCategories` consumiendo `GET /api/v1/categories` con caché persistente en React Query | `src/hooks/useCategories.ts` | TASK-003 | ⏳ Pendiente |
-| **TASK-202** | Componentes de formulario reutilizables: `MoneyInput`, `CategoryPill`, `SegmentedTypeControl` | `src/components/finance/*` | NativeWind | ⏳ Pendiente |
-| **TASK-203** | Modal de registro rápido `/(modal)/new-transaction`: selección de tipo (`INGRESO`/`GASTO`), monto, categoría y fecha | `src/app/(modal)/new-transaction.tsx` | TASK-201, TASK-202 | ⏳ Pendiente |
-| **TASK-204** | Mutación `POST /api/v1/transactions` con actualización optimista de caché e invalidación de dashboard | `src/hooks/useCreateTransaction.ts` | TASK-003 | ⏳ Pendiente |
+| **TASK-201** | Hook `useCategories` consumiendo `GET /api/v1/categories` con caché persistente en React Query | `src/hooks/useCategories.ts` | TASK-003 | ✅ Completado |
+| **TASK-202** | Componentes de formulario reutilizables: `MoneyInput`, `CategoryPill`, `SegmentedTypeControl` | `src/components/finance/*` | NativeWind | ✅ Completado |
+| **TASK-203** | Modal de registro rápido `/(modal)/new-transaction`: selección de tipo (`INGRESO`/`GASTO`), monto, categoría y fecha | `src/app/(modal)/new-transaction.tsx` | TASK-201, TASK-202 | ✅ Completado |
+| **TASK-204** | Mutación `POST /api/v1/transactions` con actualización optimista de caché e invalidación de dashboard | `src/hooks/useCreateTransaction.ts` | TASK-003 | ✅ Completado |
 
 * **Criterio de Aceptación del Sprint 2:**
   * Los montos menores o iguales a cero bloquean el envío.
