@@ -49,7 +49,7 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-101** | Contexto y hook global `AuthContext` (`useAuth`) para gestionar sesión, token JWT y datos de usuario | `src/context/AuthContext.tsx` | TASK-002, TASK-003 | ⏳ Pendiente |
+| **TASK-101** | Contexto y hook global `AuthContext` (`useAuth`) para gestionar sesión, token JWT y datos de usuario | `src/context/AuthContext.tsx` | TASK-002, TASK-003 | ✅ Completado |
 | **TASK-102** | Pantalla de bienvenida / Splash según Figma (`"Z E N T I A"`, subtítulo y botón pill "COMENZAR") | `src/app/index.tsx` | Design tokens | ⏳ Pendiente |
 | **TASK-103** | Pantalla de Login (`/(auth)/login.tsx`) con botón oficial de Google OAuth y acceso a login por teléfono | `src/app/(auth)/login.tsx` | TASK-101 | ⏳ Pendiente |
 | **TASK-104** | Flujo de login por OTP: solicitud telefónica y selector de 6 dígitos numéricos con cuenta regresiva | `src/app/(auth)/otp.tsx` | TASK-101, `/api/v1/auth/otp/*` | ⏳ Pendiente |
