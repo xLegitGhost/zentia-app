@@ -32,10 +32,10 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-001** | Definición de tipos de dominio (`User`, `Category`, `Transaction`, `TransactionType`, `DashboardSummary`, `AuthResponse`) | `src/types/index.ts` | Ninguna | ⏳ Pendiente |
-| **TASK-002** | Servicio de almacenamiento seguro (`storage.ts`) envolviendo `expo-secure-store` y fallback seguro para Web (`localStorage`) | `src/services/storage.ts` | `expo-secure-store` | ⏳ Pendiente |
-| **TASK-003** | Cliente HTTP centralizado (`api.ts`) con inyección de JWT en cabecera `Authorization` e interceptor de error 401 | `src/services/api.ts` | TASK-002, `axios` | ⏳ Pendiente |
-| **TASK-004** | Configuración del proveedor global `QueryClientProvider` de TanStack Query en el árbol de navegación | `src/app/_layout.tsx` | `@tanstack/react-query` | ⏳ Pendiente |
+| **TASK-001** | Definición de tipos de dominio (`User`, `Category`, `Transaction`, `TransactionType`, `DashboardSummary`, `AuthResponse`) | `src/types/api.ts` | Ninguna | ✅ Completado |
+| **TASK-002** | Servicio de almacenamiento seguro (`storage.ts`) envolviendo `expo-secure-store` y fallback seguro para Web (`localStorage`) | `src/services/storage.ts` | `expo-secure-store` | ✅ Completado |
+| **TASK-003** | Cliente HTTP centralizado (`api.ts`) con inyección de JWT en cabecera `Authorization` e interceptor de error 401 | `src/services/api.ts` | TASK-002, `axios` | ✅ Completado |
+| **TASK-004** | Configuración del proveedor global `QueryClientProvider` de TanStack Query en el árbol de navegación | `src/app/_layout.tsx` | `@tanstack/react-query` | ✅ Completado |
 
 * **Criterio de Aceptación del Sprint 0:**
   * `pnpm tsc --noEmit` y `npx expo lint` ejecutados con 0 errores.
