@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { ArrowLeft, Check } from 'lucide-react-native';
 
 const CATEGORIES = [
@@ -23,6 +24,7 @@ const GOALS = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
+  const { saveProfile } = useFinancialProfile();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [income, setIncome] = useState('25000');
@@ -38,6 +40,15 @@ export default function OnboardingScreen() {
   };
 
   const handleFinish = async () => {
+    try {
+      await saveProfile({
+        monthlyIncome: Number(income) || 25000,
+        monthlySavingsGoal: (Number(income) || 25000) * 0.2, // Meta sugerida del 20%
+        priorityCategoryId: selectedCategory,
+      });
+    } catch (e) {
+      console.warn('Error guardando perfil financiero:', e);
+    }
     await completeOnboarding();
     router.replace('/(tabs)');
   };
