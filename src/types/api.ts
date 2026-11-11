@@ -36,6 +36,14 @@ export interface AuthResponse {
   onboardingCompleted?: boolean;
 }
 
+export interface GoogleAuthRequest {
+  idToken: string;
+  googleId: string;
+  email: string;
+  name?: string;
+  pictureUrl?: string;
+}
+
 export interface TransactionRequest {
   amount: number;
   type: TransactionType;

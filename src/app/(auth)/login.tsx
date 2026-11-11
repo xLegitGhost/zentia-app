@@ -1,42 +1,85 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { GoogleLogo } from '@/components/ui/GoogleLogo';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      // Simulación de credencial para ambiente de desarrollo/stand
-      const mockIdToken = 'demo-id-token-' + Date.now();
-      const res = await loginWithGoogle(mockIdToken);
+  const handleAuthSuccess = (res: any) => {
+    if (res.onboardingCompleted || res.user?.onboardingCompleted) {
+      router.replace('/(tabs)');
+    } else {
+      router.replace('/(onboarding)');
+    }
+  };
 
-      if (res.onboardingCompleted || res.user?.onboardingCompleted) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/(onboarding)');
+  // Hook oficial de Google OAuth para Web
+  const triggerGoogleWebLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        // Obtener datos del perfil directamente desde Google con el access token
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then((res) => res.json());
+
+        // Enviar payload exacto requerido por UserService.java en Spring Boot
+        const res = await loginWithGoogle({
+          googleId: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name,
+          pictureUrl: userInfo.picture,
+          idToken: tokenResponse.access_token,
+        });
+
+        handleAuthSuccess(res);
+      } catch (error: any) {
+        console.warn('Error procesando login con backend:', error);
+        Alert.alert(
+          'Error de Conexión',
+          'El backend no respondió en http://localhost:8080. ¿Deseas entrar en modo demo?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Modo Demo', onPress: () => router.replace('/(onboarding)') },
+          ]
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.warn('Error en login con Google:', error);
+    },
+    onError: (errorResponse) => {
+      console.warn('Error en Google OAuth:', errorResponse);
       Alert.alert(
-        'Acceso',
-        'No se pudo conectar con el servidor backend en localhost:8080. ¿Deseas continuar en modo demo?',
+        'Google OAuth',
+        'No se pudo completar la autenticación con Google. Revisa tu Client ID o continúa en modo demo.',
         [
           { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Modo Demo',
-            onPress: () => router.replace('/(onboarding)'),
-          },
+          { text: 'Modo Demo', onPress: () => router.replace('/(onboarding)') },
         ]
       );
-    } finally {
-      setLoading(false);
+    },
+  });
+
+  const handlePressGoogle = () => {
+    if (Platform.OS === 'web') {
+      try {
+        triggerGoogleWebLogin();
+      } catch (e) {
+        // Fallback si no hay client ID configurado
+        console.warn('Error al invocar Google Login:', e);
+        Alert.alert('Google Client ID', 'Verifica configurar EXPO_PUBLIC_GOOGLE_CLIENT_ID en tu archivo .env.');
+      }
+    } else {
+      // Modo demo para móvil en lo que se compila dev build nativo
+      Alert.alert('Móvil', 'Para móvil físico se usará el login OTP o el build nativo. Iniciando en modo demo...', [
+        { text: 'Continuar', onPress: () => router.replace('/(onboarding)') },
+      ]);
     }
   };
 
@@ -57,7 +100,7 @@ export default function LoginScreen() {
 
         {/* Google OAuth Button (Figma Spec) */}
         <Pressable
-          onPress={handleGoogleLogin}
+          onPress={handlePressGoogle}
           disabled={loading}
           className="w-full bg-white active:bg-zinc-200 h-14 rounded-full flex-row items-center justify-center px-6 shadow-md mb-4"
         >

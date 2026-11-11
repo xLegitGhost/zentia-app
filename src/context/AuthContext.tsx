@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import { storage } from '@/services/storage';
-import { AuthResponse, UserResponse } from '@/types/api';
+import { AuthResponse, GoogleAuthRequest, UserResponse } from '@/types/api';
 
 interface AuthContextType {
   user: UserResponse | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
+  loginWithGoogle: (payload: GoogleAuthRequest) => Promise<AuthResponse>;
   requestOtp: (phoneNumber: string) => Promise<{ message: string }>;
   verifyOtp: (phoneNumber: string, codigo: string) => Promise<{ token: string; message: string }>;
   completeOnboarding: () => void;
@@ -41,16 +41,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     bootstrap();
   }, []);
 
-  const loginWithGoogle = async (idToken: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/google', { idToken });
+  const loginWithGoogle = async (payload: GoogleAuthRequest): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/google', payload);
     const authData = response.data;
 
     // Normalizar usuario según respuesta del backend
     const resolvedUser: UserResponse = authData.user || {
       id: authData.userId || 0,
-      email: authData.email || '',
-      fullName: authData.name || '',
-      avatarUrl: '',
+      email: authData.email || payload.email || '',
+      fullName: authData.name || payload.name || '',
+      avatarUrl: payload.pictureUrl || '',
       onboardingCompleted: authData.onboardingCompleted ?? false,
     };
 
