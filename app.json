@@ -33,7 +33,13 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir que Zentia use Face ID para proteger tu información financiera."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

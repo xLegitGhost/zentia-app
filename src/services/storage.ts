@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 const JWT_KEY = 'zentia_jwt_token';
 const USER_KEY = 'zentia_user_data';
+const BIOMETRICS_KEY = 'zentia_biometrics_enabled';
 
 export const storage = {
   async setToken(token: string): Promise<void> {
@@ -68,6 +69,29 @@ export const storage = {
     } catch {
       return null;
     }
+  },
+
+  async setBiometricsEnabled(enabled: boolean): Promise<void> {
+    const val = enabled ? 'true' : 'false';
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.setItem(BIOMETRICS_KEY, val);
+      } catch (e) {}
+      return;
+    }
+    await SecureStore.setItemAsync(BIOMETRICS_KEY, val);
+  },
+
+  async getBiometricsEnabled(): Promise<boolean> {
+    if (Platform.OS === 'web') {
+      try {
+        return localStorage.getItem(BIOMETRICS_KEY) === 'true';
+      } catch (e) {
+        return false;
+      }
+    }
+    const val = await SecureStore.getItemAsync(BIOMETRICS_KEY);
+    return val === 'true';
   },
 
   async clearSession(): Promise<void> {

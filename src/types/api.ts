@@ -52,6 +52,12 @@ export interface TransactionRequest {
   transactionDate?: string; // Formato YYYY-MM-DD
 }
 
+export interface UpdateTransactionRequest {
+  categoryId: number;
+  amount: number;
+  description?: string;
+}
+
 export interface TransactionResponse {
   id: number;
   amount: number;

@@ -103,11 +103,11 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-401** | Pantalla de historial `src/app/(tabs)/transactions.tsx` con agrupación por fecha y scroll fluido | `src/app/(tabs)/transactions.tsx` | Virtualized list | ⏳ Pendiente |
-| **TASK-402** | Edición de transacciones (`PUT /api/v1/transactions/{id}`) permitiendo cambiar monto, categoría y descripción | `src/hooks/useUpdateTransaction.ts` | Sprint 2 | ⏳ Pendiente |
-| **TASK-403** | Eliminación de transacciones con confirmación y consumo de `DELETE /api/v1/transactions/{id}` | `src/hooks/useDeleteTransaction.ts` | Sprint 2 | ⏳ Pendiente |
-| **TASK-404** | Desbloqueo biométrico con `expo-local-authentication` al abrir la aplicación | `src/services/biometrics.ts` | `expo-local-authentication` | ⏳ Pendiente |
-| **TASK-405** | Pantalla de perfil (`src/app/(tabs)/profile.tsx`) con datos del usuario, switch biométrico y logout seguro | `src/app/(tabs)/profile.tsx` | TASK-101 | ⏳ Pendiente |
+| **TASK-401** | Pantalla de historial `src/app/(tabs)/transactions.tsx` con agrupación por fecha y scroll fluido | `src/app/(tabs)/transactions.tsx` | Virtualized list | ✅ Completado |
+| **TASK-402** | Edición de transacciones (`PUT /api/v1/transactions/{id}`) permitiendo cambiar monto, categoría y descripción | `src/hooks/useUpdateTransaction.ts` | Sprint 2 | ✅ Completado |
+| **TASK-403** | Eliminación de transacciones con confirmación y consumo de `DELETE /api/v1/transactions/{id}` | `src/hooks/useDeleteTransaction.ts` | Sprint 2 | ✅ Completado |
+| **TASK-404** | Desbloqueo biométrico con `expo-local-authentication` al abrir la aplicación | `src/services/biometrics.ts` | `expo-local-authentication` | ✅ Completado |
+| **TASK-405** | Pantalla de perfil (`src/app/(tabs)/profile.tsx`) con datos del usuario, switch biométrico y logout seguro | `src/app/(tabs)/profile.tsx` | TASK-101 | ✅ Completado |
 
 * **Criterio de Aceptación del Sprint 4:**
   * Al eliminar una transacción, la lista y el dashboard se sincronizan de inmediato sin recargar toda la app.
