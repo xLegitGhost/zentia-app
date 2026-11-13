@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -51,7 +59,11 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black justify-between px-6 py-4">
+    <SafeAreaView className="flex-1 bg-black px-6 py-4">
+      <KeyboardAvoidingView
+        className="flex-1 justify-between"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       {/* Brand Header */}
       <View className="flex-row items-center justify-between mb-4">
         {step > 1 && step < 4 ? (
@@ -115,6 +127,8 @@ export default function OnboardingScreen() {
                       value={income}
                       onChangeText={setIncome}
                       keyboardType="numeric"
+                      returnKeyType="done"
+                      onSubmitEditing={handleNext}
                       placeholder="0.00"
                       placeholderTextColor="#71717A"
                       className="text-white text-3xl font-extrabold text-center min-w-[140px]"
@@ -269,6 +283,7 @@ export default function OnboardingScreen() {
           </SpringPressable>
         </FadeSlideIn>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

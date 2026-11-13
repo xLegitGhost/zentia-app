@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleProp, ViewStyle } from 'react-native';
+import { cssInterop } from 'nativewind';
+
+cssInterop(Animated.View, { className: 'style' });
 
 interface FadeSlideInProps {
   children: React.ReactNode;

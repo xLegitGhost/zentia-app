@@ -1,5 +1,9 @@
 import React, { useRef } from 'react';
 import { Animated, Platform, Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
+import { cssInterop } from 'nativewind';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+cssInterop(AnimatedPressable, { className: 'style' });
 
 interface SpringPressableProps extends Omit<PressableProps, 'style'> {
   children: React.ReactNode;
@@ -62,25 +66,22 @@ export const SpringPressable: React.FC<SpringPressableProps> = ({
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       disabled={disabled}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      className={className}
+      style={[
+        {
+          transform: [{ scale }],
+          opacity: disabled ? 0.55 : opacity,
+        },
+        style,
+      ]}
       {...rest}
     >
-      <Animated.View
-        className={className}
-        style={[
-          {
-            transform: [{ scale }],
-            opacity: disabled ? 0.55 : opacity,
-          },
-          style,
-        ]}
-      >
-        {children}
-      </Animated.View>
-    </Pressable>
+      {children}
+    </AnimatedPressable>
   );
 };
 
