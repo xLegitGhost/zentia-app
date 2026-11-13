@@ -121,10 +121,10 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-501** | Verificación de responsive design en web: contenedores centrados con `max-w-md` y navegación adaptativa | `src/app/*` | Web styles | ⏳ Pendiente |
-| **TASK-502** | Exportación de bundle web de producción con `npx expo export -p web` | Configuración Vercel | Expo Web | ⏳ Pendiente |
-| **TASK-503** | Generación de componente y recurso de Código QR apuntando a la URL pública del demo | `docs/assets/demo-qr.png` | Web URL | ⏳ Pendiente |
-| **TASK-504** | Prueba integral de carga y sincronización concurrente: dispositivo físico (iOS/Android con Expo Go) + navegador web | QA Checklist | Backend Spring Boot | ⏳ Pendiente |
+| **TASK-501** | Verificación de responsive design en web: contenedores centrados con `max-w-md` y navegación adaptativa | `src/app/*`, `src/components/layout/ResponsiveAppShell.tsx` | Web styles | ✅ Completado |
+| **TASK-502** | Exportación de bundle web de producción con `npx expo export -p web` | `vercel.json` | Expo Web | ✅ Completado |
+| **TASK-503** | Generación de componente y recurso de Código QR apuntando a la URL pública del demo | `docs/assets/demo-qr.png`, `src/components/ui/StandQRCard.tsx` | Web URL | ✅ Completado |
+| **TASK-504** | Prueba integral de carga y sincronización concurrente: dispositivo físico (iOS/Android con Expo Go) + navegador web | `docs/QA_CHECKLIST.md` | Backend Spring Boot | ✅ Completado |
 
 * **Criterio de Aceptación del Sprint 5:**
   * Cualquier alumno o evaluador puede escanear el QR del stand y cargar la aplicación en su navegador móvil en menos de 3 segundos sin instalar ningún archivo.

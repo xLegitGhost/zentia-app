@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { GoogleAuthProviderWrapper } from '@/components/auth/GoogleAuthProviderWrapper';
 import { BiometricLockGate } from '@/components/auth/BiometricLockGate';
+import { ResponsiveAppShell } from '@/components/layout/ResponsiveAppShell';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,22 +29,24 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GoogleAuthProviderWrapper>
         <AuthProvider>
-          <BiometricLockGate>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: '#000000' },
-                animation: 'fade',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(modal)" options={{ presentation: 'modal' }} />
-            </Stack>
-          </BiometricLockGate>
+          <ResponsiveAppShell>
+            <BiometricLockGate>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: '#000000' },
+                  animation: 'fade',
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(modal)" options={{ presentation: 'modal' }} />
+              </Stack>
+            </BiometricLockGate>
+          </ResponsiveAppShell>
         </AuthProvider>
       </GoogleAuthProviderWrapper>
     </QueryClientProvider>

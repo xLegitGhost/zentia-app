@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { storage } from '@/services/storage';
 import { biometrics, BiometricsCapability } from '@/services/biometrics';
+import { StandQRCard } from '@/components/ui/StandQRCard';
 import { formatCurrency } from '@/utils/currency';
 
 export default function ProfileScreen() {
@@ -175,6 +176,9 @@ export default function ProfileScreen() {
             </View>
           ) : null}
         </View>
+
+        {/* QR Demo Stand (TASK-503) */}
+        <StandQRCard />
 
         {/* Logout */}
         <Pressable

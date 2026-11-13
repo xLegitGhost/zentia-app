@@ -28,7 +28,7 @@ export function useCategories(typeFilter?: TransactionType) {
       }
       return DEFAULT_CATEGORIES;
     },
-    initialData: DEFAULT_CATEGORIES,
+    placeholderData: DEFAULT_CATEGORIES,
     staleTime: 1000 * 60 * 60, // 1 hora de caché
   });
 
