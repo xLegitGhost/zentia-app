@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 const JWT_KEY = 'zentia_jwt_token';
 const USER_KEY = 'zentia_user_data';
 const BIOMETRICS_KEY = 'zentia_biometrics_enabled';
+const TUTORIAL_DISMISSED_KEY = 'zentia_tutorial_dismissed';
 
 export const storage = {
   async setToken(token: string): Promise<void> {
@@ -91,6 +92,29 @@ export const storage = {
       }
     }
     const val = await SecureStore.getItemAsync(BIOMETRICS_KEY);
+    return val === 'true';
+  },
+
+  async setTutorialDismissed(dismissed: boolean): Promise<void> {
+    const val = dismissed ? 'true' : 'false';
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.setItem(TUTORIAL_DISMISSED_KEY, val);
+      } catch (e) {}
+      return;
+    }
+    await SecureStore.setItemAsync(TUTORIAL_DISMISSED_KEY, val);
+  },
+
+  async getTutorialDismissed(): Promise<boolean> {
+    if (Platform.OS === 'web') {
+      try {
+        return localStorage.getItem(TUTORIAL_DISMISSED_KEY) === 'true';
+      } catch (e) {
+        return false;
+      }
+    }
+    const val = await SecureStore.getItemAsync(TUTORIAL_DISMISSED_KEY);
     return val === 'true';
   },
 

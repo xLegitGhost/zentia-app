@@ -9,6 +9,7 @@ import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { storage } from '@/services/storage';
 import { biometrics, BiometricsCapability } from '@/services/biometrics';
 import { StandQRCard } from '@/components/ui/StandQRCard';
+import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { formatCurrency } from '@/utils/currency';
@@ -114,7 +115,7 @@ export default function ProfileScreen() {
                     isAuthenticated ? 'text-[#22C55E]' : 'text-zinc-400'
                   }`}
                 >
-                  {isAuthenticated ? 'JWT Activo' : 'Modo Demo Local'}
+                  {isAuthenticated ? 'En línea' : 'Modo Demo Local'}
                 </Text>
               </View>
             </View>
@@ -185,8 +186,13 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
+        {/* App Hermana Kaluri.app */}
+        <FadeSlideIn delay={60}>
+          <KaluriSplashBanner variant="card" seed={2} />
+        </FadeSlideIn>
+
         {/* QR Demo Stand (TASK-503) */}
-        <FadeSlideIn delay={80}>
+        <FadeSlideIn delay={100}>
           <StandQRCard />
         </FadeSlideIn>
 

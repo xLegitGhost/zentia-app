@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Target, Plus } from 'lucide-react-native';
+import { HelpCircle, Plus, Target } from 'lucide-react-native';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { useCategories } from '@/hooks/useCategories';
 import {
@@ -11,11 +11,14 @@ import {
   PeriodKey,
   useDashboardSummary,
 } from '@/hooks/useDashboard';
+import { storage } from '@/services/storage';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { GuidedTutorialCard } from '@/components/dashboard/GuidedTutorialCard';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { formatCurrency } from '@/utils/currency';
 
 const PERIOD_LABELS: Record<PeriodKey, string> = {
@@ -33,13 +36,22 @@ export default function DashboardScreen() {
   const [customRange, setCustomRange] = useState<DateRange>(() =>
     getPeriodDateRange('current_month')
   );
+  const [tutorialDismissed, setTutorialDismissed] = useState(true);
+  const [forceTutorial, setForceTutorial] = useState(false);
+  const [brandTaps, setBrandTaps] = useState(0);
+
+  useEffect(() => {
+    storage.getTutorialDismissed().then((dismissed) => {
+      setTutorialDismissed(dismissed);
+    });
+  }, []);
 
   const activeRange = useMemo(
     () => getPeriodDateRange(selectedPeriod, customRange),
     [selectedPeriod, customRange]
   );
 
-  const { summary, transactions, isFetching, refetch } = useDashboardSummary(
+  const { summary, transactions, isLoading, isFetching, refetch } = useDashboardSummary(
     activeRange.startDate,
     activeRange.endDate
   );
@@ -60,6 +72,15 @@ export default function DashboardScreen() {
       ? `${activeRange.startDate} → ${activeRange.endDate}`
       : PERIOD_LABELS[selectedPeriod];
 
+  const showTutorial =
+    forceTutorial || (!isLoading && transactions.length === 0 && !tutorialDismissed);
+
+  const handleDismissTutorial = async () => {
+    setForceTutorial(false);
+    setTutorialDismissed(true);
+    await storage.setTutorialDismissed(true);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-black px-6 pt-4">
       <ScrollView
@@ -75,20 +96,59 @@ export default function DashboardScreen() {
       >
         {/* Top Brand Bar */}
         <View className="flex-row items-center justify-between mb-5">
-          <Text className="text-white text-xs font-bold tracking-[0.25em] uppercase opacity-70">
-            Z E N T I A
-          </Text>
-          <View className="bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 flex-row items-center">
-            <View
-              className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                summary.isDemoData ? 'bg-amber-400' : 'bg-[#22C55E]'
-              }`}
-            />
-            <Text className="text-zinc-400 text-xs font-medium">
-              {summary.isDemoData ? 'Modo Demo' : 'Sincronizado'}
+          <Pressable
+            onPress={() => setBrandTaps((c) => c + 1)}
+            className="active:opacity-70"
+          >
+            <Text className="text-white text-xs font-bold tracking-[0.25em] uppercase opacity-70">
+              Z E N T I A
             </Text>
+          </Pressable>
+
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => setForceTutorial((prev) => !prev)}
+              className={`w-7 h-7 rounded-full border items-center justify-center active:opacity-75 ${
+                showTutorial
+                  ? 'bg-emerald-950/70 border-emerald-700'
+                  : 'bg-zinc-900 border-zinc-800'
+              }`}
+            >
+              <HelpCircle size={14} color={showTutorial ? '#22C55E' : '#A1A1AA'} />
+            </Pressable>
+
+            <View className="bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 flex-row items-center">
+              <View
+                className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                  summary.isDemoData ? 'bg-amber-400' : 'bg-[#22C55E]'
+                }`}
+              />
+              <Text className="text-zinc-400 text-xs font-medium">
+                {summary.isDemoData ? 'Modo Demo' : 'En línea'}
+              </Text>
+            </View>
           </View>
         </View>
+
+        {/* Easter Egg desbloqueado tras 3 taps en el título */}
+        {brandTaps >= 3 ? (
+          <FadeSlideIn className="mb-4">
+            <KaluriSplashBanner variant="card" seed={brandTaps} />
+          </FadeSlideIn>
+        ) : null}
+
+        {/* Tutorial guiado (automático si no hay movimientos, o activado con ?) */}
+        {showTutorial ? (
+          <GuidedTutorialCard
+            hasTransactions={transactions.length > 0}
+            totalIngresos={summary.totalIngresos}
+            totalGastos={summary.totalGastos}
+            balanceActual={summary.balanceActual}
+            savingsGoal={savingsGoal}
+            onDismiss={handleDismissTutorial}
+            onQuickAdd={() => router.push('/(modal)/new-transaction')}
+          />
+        ) : null}
 
         {/* Period Selector (TASK-303) */}
         <PeriodSelector
@@ -163,6 +223,11 @@ export default function DashboardScreen() {
             onAddFirst={() => router.push('/(modal)/new-transaction')}
           />
         </FadeSlideIn>
+
+        {/* Discreto splash de hermandad estilo Terraria / Minecraft */}
+        <View className="items-center pb-28 -mt-16">
+          <KaluriSplashBanner variant="minimal" seed={3} />
+        </View>
       </ScrollView>
 
       {/* Floating Add Action Button */}

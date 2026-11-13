@@ -21,6 +21,7 @@ import { MoneyInput } from '@/components/finance/MoneyInput';
 import { CategoryPicker } from '@/components/finance/CategoryPicker';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
+import { KaluriFoodHint } from '@/components/ui/KaluriEasterEgg';
 
 export default function NewTransactionModal() {
   const router = useRouter();
@@ -44,6 +45,11 @@ export default function NewTransactionModal() {
     }
     return categories[0]?.id ?? null;
   }, [selectedCategoryId, categories]);
+
+  const selectedCategoryName = useMemo(
+    () => categories.find((cat) => cat.id === effectiveCategoryId)?.name,
+    [categories, effectiveCategoryId]
+  );
 
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
@@ -127,6 +133,8 @@ export default function NewTransactionModal() {
             onSelect={setSelectedCategoryId}
           />
         </FadeSlideIn>
+
+        <KaluriFoodHint categoryName={selectedCategoryName} />
 
         <FadeSlideIn delay={140}>
           <View className="bg-[#121214] border border-zinc-800/90 rounded-2xl p-4 mb-6">

@@ -9,19 +9,25 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Platform.OS === 'web' ? 'rgba(18, 18, 20, 0.88)' : '#121214',
+          backgroundColor: Platform.OS === 'web' ? 'rgba(18, 18, 20, 0.9)' : '#121214',
           borderTopColor: 'rgba(63, 63, 70, 0.55)',
           borderTopWidth: 1,
-          height: 62,
-          paddingBottom: 8,
+          minHeight: 72,
+          height: Platform.OS === 'web' ? 76 : undefined,
           paddingTop: 8,
+          paddingBottom: Platform.OS === 'web' ? 10 : 8,
           ...(Platform.OS === 'web' ? ({ backdropFilter: 'blur(16px)' } as any) : {}),
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
+          justifyContent: 'center',
         },
         tabBarActiveTintColor: '#22C55E',
         tabBarInactiveTintColor: '#71717A',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: 2,
         },
       }}
     >
@@ -29,21 +35,21 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+          tabBarIcon: ({ color }) => <LayoutDashboard color={color} size={21} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
           title: 'Movimientos',
-          tabBarIcon: ({ color, size }) => <ReceiptText color={color} size={size} />,
+          tabBarIcon: ({ color }) => <ReceiptText color={color} size={21} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarIcon: ({ color }) => <User color={color} size={21} />,
         }}
       />
     </Tabs>
