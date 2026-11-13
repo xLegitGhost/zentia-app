@@ -22,6 +22,7 @@ import {
 import { useDeleteTransaction } from '@/hooks/useDeleteTransaction';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { TransactionResponse } from '@/types/api';
 import { formatCurrency } from '@/utils/currency';
 
@@ -232,6 +233,7 @@ export default function TransactionsScreen() {
               className={`text-xs font-semibold ${
                 section.dailyNet >= 0 ? 'text-[#22C55E]' : 'text-red-400'
               }`}
+              style={{ fontVariant: ['tabular-nums'] }}
             >
               {formatCurrency(section.dailyNet, true)}
             </Text>
@@ -270,6 +272,7 @@ export default function TransactionsScreen() {
                     className={`text-sm font-bold mb-1.5 ${
                       isIncome ? 'text-[#22C55E]' : 'text-red-400'
                     }`}
+                    style={{ fontVariant: ['tabular-nums'] }}
                   >
                     {isIncome
                       ? formatCurrency(item.amount, true)
@@ -323,12 +326,14 @@ export default function TransactionsScreen() {
         }}
       />
 
-      <Pressable
+      <SpringPressable
         onPress={() => router.push('/(modal)/new-transaction')}
-        className="absolute bottom-6 right-6 bg-[#22C55E] w-14 h-14 rounded-full items-center justify-center shadow-2xl active:opacity-80"
+        scaleTo={0.93}
+        className="w-14 h-14 bg-[#22C55E] rounded-full items-center justify-center shadow-2xl"
+        style={{ position: 'absolute', bottom: 24, right: 24 }}
       >
         <Plus size={26} color="#000000" strokeWidth={2.5} />
-      </Pressable>
+      </SpringPressable>
     </SafeAreaView>
   );
 }

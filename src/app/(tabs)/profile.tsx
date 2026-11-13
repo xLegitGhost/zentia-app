@@ -9,6 +9,8 @@ import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { storage } from '@/services/storage';
 import { biometrics, BiometricsCapability } from '@/services/biometrics';
 import { StandQRCard } from '@/components/ui/StandQRCard';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { formatCurrency } from '@/utils/currency';
 
 export default function ProfileScreen() {
@@ -136,13 +138,19 @@ export default function ProfileScreen() {
 
           <View className="flex-row justify-between py-2 border-b border-zinc-800/70">
             <Text className="text-zinc-400 text-xs">Ingreso Mensual Base</Text>
-            <Text className="text-white text-xs font-bold">
+            <Text
+              className="text-white text-xs font-bold"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
               {formatCurrency(profile?.monthlyIncome ?? 25000)}
             </Text>
           </View>
           <View className="flex-row justify-between pt-3">
             <Text className="text-zinc-400 text-xs">Meta de Ahorro Mensual</Text>
-            <Text className="text-[#22C55E] text-xs font-bold">
+            <Text
+              className="text-[#22C55E] text-xs font-bold"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
               {formatCurrency(profile?.monthlySavingsGoal ?? 5000)}
             </Text>
           </View>
@@ -178,18 +186,20 @@ export default function ProfileScreen() {
         </View>
 
         {/* QR Demo Stand (TASK-503) */}
-        <StandQRCard />
+        <FadeSlideIn delay={80}>
+          <StandQRCard />
+        </FadeSlideIn>
 
         {/* Logout */}
-        <Pressable
+        <SpringPressable
           onPress={handleLogout}
-          className="w-full bg-red-950/40 border border-red-900/50 h-14 rounded-full flex-row items-center justify-center active:opacity-80"
+          className="w-full bg-red-950/40 border border-red-900/50 h-14 rounded-full flex-row items-center justify-center"
         >
           <LogOut size={18} color="#EF4444" />
           <Text className="text-red-400 font-bold text-sm tracking-wider uppercase ml-2">
             CERRAR SESIÓN
           </Text>
-        </Pressable>
+        </SpringPressable>
       </ScrollView>
     </SafeAreaView>
   );

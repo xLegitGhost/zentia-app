@@ -2,16 +2,24 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { CategoryResponse, TransactionType } from '@/types/api';
 
+/**
+ * Catálogo por defecto alineado 1:1 con los IDs reales del backend Spring Boot.
+ * Se usa únicamente como placeholder antes de recibir GET /api/v1/categories o en modo offline.
+ */
 export const DEFAULT_CATEGORIES: CategoryResponse[] = [
-  { id: 1, name: 'Alimentación', iconKey: 'utensils', type: 'EXPENSE' },
-  { id: 2, name: 'Transporte', iconKey: 'car', type: 'EXPENSE' },
-  { id: 3, name: 'Vivienda y Servicios', iconKey: 'home', type: 'EXPENSE' },
-  { id: 4, name: 'Entretenimiento', iconKey: 'film', type: 'EXPENSE' },
-  { id: 5, name: 'Salud y Bienestar', iconKey: 'heart-pulse', type: 'EXPENSE' },
-  { id: 6, name: 'Educación', iconKey: 'graduation-cap', type: 'EXPENSE' },
-  { id: 7, name: 'Nómina / Salario', iconKey: 'wallet', type: 'INCOME' },
-  { id: 8, name: 'Inversiones', iconKey: 'trending-up', type: 'INCOME' },
-  { id: 9, name: 'Otros Ingresos', iconKey: 'circle-dollar-sign', type: 'INCOME' },
+  { id: 1, name: 'Comida y Despensa', icon: 'shopping-cart', type: 'GASTO' },
+  { id: 2, name: 'Sueldo / Salario', icon: 'briefcase', type: 'INGRESO' },
+  { id: 3, name: 'Beca / Apoyo', icon: 'award', type: 'INGRESO' },
+  { id: 4, name: 'Freelance / Proyectos', icon: 'laptop', type: 'INGRESO' },
+  { id: 5, name: 'Otros Ingresos', icon: 'dollar-sign', type: 'INGRESO' },
+  { id: 6, name: 'Restaurantes y Antojos', icon: 'utensils', type: 'GASTO' },
+  { id: 7, name: 'Transporte', icon: 'bus', type: 'GASTO' },
+  { id: 8, name: 'Vivienda y Servicios', icon: 'home', type: 'GASTO' },
+  { id: 9, name: 'Entretenimiento y Salidas', icon: 'film', type: 'GASTO' },
+  { id: 10, name: 'Suscripciones y Tecnología', icon: 'tv', type: 'GASTO' },
+  { id: 11, name: 'Salud y Cuidado Personal', icon: 'heart', type: 'GASTO' },
+  { id: 12, name: 'Educación', icon: 'book', type: 'GASTO' },
+  { id: 13, name: 'Otros Gastos', icon: 'more-horizontal', type: 'GASTO' },
 ];
 
 export function useCategories(typeFilter?: TransactionType) {
@@ -23,13 +31,13 @@ export function useCategories(typeFilter?: TransactionType) {
         if (response.data && response.data.length > 0) {
           return response.data;
         }
-      } catch (e) {
+      } catch {
         console.warn('Backend categories unavailable, using default catalog.');
       }
       return DEFAULT_CATEGORIES;
     },
     placeholderData: DEFAULT_CATEGORIES,
-    staleTime: 1000 * 60 * 60, // 1 hora de caché
+    staleTime: 1000 * 60 * 15, // 15 min
   });
 
   const allCategories = query.data || DEFAULT_CATEGORIES;

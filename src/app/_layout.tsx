@@ -36,14 +36,17 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   contentStyle: { backgroundColor: '#000000' },
-                  animation: 'fade',
+                  animation: 'ios_from_right',
                 }}
               >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="index" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
                 <Stack.Screen name="(onboarding)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="(modal)" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                <Stack.Screen
+                  name="(modal)"
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                />
               </Stack>
             </BiometricLockGate>
           </ResponsiveAppShell>

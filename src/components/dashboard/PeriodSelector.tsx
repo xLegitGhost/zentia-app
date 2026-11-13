@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Calendar } from 'lucide-react-native';
 import { DateRange, PeriodKey } from '@/hooks/useDashboard';
 
@@ -28,6 +36,34 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const [draftEnd, setDraftEnd] = useState(customRange.endDate);
   const [rangeError, setRangeError] = useState<string | null>(null);
 
+  const [pillWidth, setPillWidth] = useState(0);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const useNativeDriver = Platform.OS !== 'web';
+  const activeIndex = Math.max(
+    0,
+    PERIOD_OPTIONS.findIndex((o) => o.key === selectedPeriod)
+  );
+
+  useEffect(() => {
+    if (pillWidth <= 0) return;
+    Animated.spring(translateX, {
+      toValue: activeIndex * pillWidth,
+      damping: 22,
+      stiffness: 260,
+      mass: 0.7,
+      useNativeDriver,
+    }).start();
+  }, [activeIndex, pillWidth, translateX, useNativeDriver]);
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const innerWidth = e.nativeEvent.layout.width - 8; // p-1 -> 4px * 2
+    if (innerWidth > 0) {
+      const nextWidth = innerWidth / PERIOD_OPTIONS.length;
+      setPillWidth(nextWidth);
+      translateX.setValue(activeIndex * nextWidth);
+    }
+  };
+
   const handleApply = () => {
     if (!ISO_DATE_REGEX.test(draftStart) || !ISO_DATE_REGEX.test(draftEnd)) {
       setRangeError('Usa formato YYYY-MM-DD');
@@ -43,16 +79,33 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
   return (
     <View className="mb-5">
-      <View className="flex-row bg-[#121214] border border-zinc-800 rounded-full p-1 gap-1">
+      <View
+        onLayout={handleLayout}
+        className="flex-row bg-[#121214] border border-zinc-800/90 rounded-full p-1 relative"
+      >
+        {pillWidth > 0 ? (
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: 4,
+              bottom: 4,
+              left: 4,
+              width: pillWidth,
+              borderRadius: 999,
+              backgroundColor: '#27272A',
+              transform: [{ translateX }],
+            }}
+          />
+        ) : null}
+
         {PERIOD_OPTIONS.map((opt) => {
           const isActive = selectedPeriod === opt.key;
           return (
             <Pressable
               key={opt.key}
               onPress={() => onSelectPeriod(opt.key)}
-              className={`flex-1 py-2 px-3 rounded-full items-center justify-center flex-row ${
-                isActive ? 'bg-[#27272A]' : 'bg-transparent'
-              }`}
+              className="flex-1 py-2 px-3 rounded-full items-center justify-center flex-row"
             >
               {opt.key === 'custom' ? (
                 <Calendar
@@ -75,7 +128,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       </View>
 
       {selectedPeriod === 'custom' ? (
-        <View className="mt-3 bg-[#121214] border border-zinc-800 rounded-2xl p-3">
+        <View className="mt-3 bg-[#121214] border border-zinc-800/90 rounded-2xl p-3">
           <View className="flex-row items-center gap-2">
             <View className="flex-1">
               <Text className="text-zinc-500 text-[10px] uppercase mb-1">Inicio</Text>
@@ -85,6 +138,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor="#52525B"
                 className="bg-[#27272A] text-white text-xs rounded-xl px-3 py-2 font-medium"
+                style={{ fontVariant: ['tabular-nums'] }}
               />
             </View>
             <View className="flex-1">
@@ -95,6 +149,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor="#52525B"
                 className="bg-[#27272A] text-white text-xs rounded-xl px-3 py-2 font-medium"
+                style={{ fontVariant: ['tabular-nums'] }}
               />
             </View>
             <Pressable

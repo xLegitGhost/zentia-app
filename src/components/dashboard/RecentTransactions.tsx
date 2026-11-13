@@ -98,6 +98,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   className={`text-sm font-bold ${
                     isIncome ? 'text-[#22C55E]' : 'text-red-400'
                   }`}
+                  style={{ fontVariant: ['tabular-nums'] }}
                 >
                   {isIncome
                     ? formatCurrency(tx.amount, true)

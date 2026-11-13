@@ -33,6 +33,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         className={`text-3xl font-extrabold tracking-tight mb-5 ${
           isPositive ? 'text-[#22C55E]' : 'text-red-400'
         }`}
+        style={{ fontVariant: ['tabular-nums'] }}
       >
         {formatCurrency(balanceActual)}
       </Text>
@@ -44,7 +45,10 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           </View>
           <View>
             <Text className="text-zinc-500 text-xs font-medium mb-0.5">Ingresos Totales</Text>
-            <Text className="text-[#22C55E] text-base font-bold">
+            <Text
+              className="text-[#22C55E] text-base font-bold"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
               {formatCurrency(totalIngresos, true)}
             </Text>
           </View>
@@ -53,7 +57,10 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         <View className="flex-row items-center">
           <View className="items-end mr-2.5">
             <Text className="text-zinc-500 text-xs font-medium mb-0.5">Gastos Totales</Text>
-            <Text className="text-red-400 text-base font-bold">
+            <Text
+              className="text-red-400 text-base font-bold"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
               -{formatCurrency(Math.abs(totalGastos))}
             </Text>
           </View>

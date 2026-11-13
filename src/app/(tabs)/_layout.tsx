@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { LayoutDashboard, ReceiptText, User } from 'lucide-react-native';
 
@@ -8,12 +9,13 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#121214',
-          borderTopColor: '#27272A',
+          backgroundColor: Platform.OS === 'web' ? 'rgba(18, 18, 20, 0.88)' : '#121214',
+          borderTopColor: 'rgba(63, 63, 70, 0.55)',
           borderTopWidth: 1,
-          height: 60,
+          height: 62,
           paddingBottom: 8,
           paddingTop: 8,
+          ...(Platform.OS === 'web' ? ({ backdropFilter: 'blur(16px)' } as any) : {}),
         },
         tabBarActiveTintColor: '#22C55E',
         tabBarInactiveTintColor: '#71717A',

@@ -4,15 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
+import { useCategories } from '@/hooks/useCategories';
+import { CategoryIcon } from '@/components/CategoryIcon';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { ArrowLeft, Check } from 'lucide-react-native';
-
-const CATEGORIES = [
-  { id: '1', name: 'Alimentación' },
-  { id: '2', name: 'Transporte' },
-  { id: '3', name: 'Vivienda y Servicios' },
-  { id: '4', name: 'Entretenimiento' },
-  { id: '5', name: 'Salud' },
-];
 
 const GOALS = [
   'Ahorrar más cada mes',
@@ -25,10 +21,11 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
   const { saveProfile } = useFinancialProfile();
+  const { categories: expenseCategories } = useCategories('EXPENSE');
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [income, setIncome] = useState('25000');
-  const [selectedCategory, setSelectedCategory] = useState('1');
+  const [selectedCategory, setSelectedCategory] = useState<number>(1);
   const [selectedGoal, setSelectedGoal] = useState(GOALS[0]);
 
   const handleNext = () => {
@@ -100,7 +97,7 @@ export default function OnboardingScreen() {
 
             {/* Step 1: Ingreso Mensual */}
             {step === 1 && (
-              <View>
+              <FadeSlideIn key="step-1">
                 <Text className="text-white text-xl font-bold mb-2">
                   ¿Cuál es tu ingreso neto mensual aproximado?
                 </Text>
@@ -121,16 +118,17 @@ export default function OnboardingScreen() {
                       placeholder="0.00"
                       placeholderTextColor="#71717A"
                       className="text-white text-3xl font-extrabold text-center min-w-[140px]"
+                      style={{ fontVariant: ['tabular-nums'] }}
                       autoFocus
                     />
                   </View>
                 </View>
-              </View>
+              </FadeSlideIn>
             )}
 
-            {/* Step 2: Categorías de Gasto Prioritarias */}
+            {/* Step 2: Categorías de Gasto Prioritarias (Catálogo real del backend) */}
             {step === 2 && (
-              <View>
+              <FadeSlideIn key="step-2">
                 <Text className="text-white text-xl font-bold mb-2">
                   ¿En qué sueles gastar más cada mes?
                 </Text>
@@ -138,36 +136,44 @@ export default function OnboardingScreen() {
                   Selecciona la categoría principal para configurar tus alertas.
                 </Text>
 
-                <ScrollView className="max-h-[260px]">
-                  {CATEGORIES.map((cat) => (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => setSelectedCategory(cat.id)}
-                      className={`p-4 rounded-2xl mb-2.5 flex-row items-center justify-between border ${
-                        selectedCategory === cat.id
-                          ? 'bg-[#27272A] border-[#22C55E]'
-                          : 'bg-[#18181B] border-zinc-800'
-                      }`}
-                    >
-                      <Text
-                        className={`text-sm font-medium ${
-                          selectedCategory === cat.id ? 'text-white' : 'text-zinc-400'
+                <ScrollView className="max-h-[260px]" showsVerticalScrollIndicator={false}>
+                  {expenseCategories.map((cat) => {
+                    const active = selectedCategory === cat.id;
+                    return (
+                      <Pressable
+                        key={cat.id}
+                        onPress={() => setSelectedCategory(cat.id)}
+                        className={`p-4 rounded-2xl mb-2.5 flex-row items-center justify-between border ${
+                          active
+                            ? 'bg-[#27272A] border-[#22C55E]'
+                            : 'bg-[#18181B] border-zinc-800/80'
                         }`}
                       >
-                        {cat.name}
-                      </Text>
-                      {selectedCategory === cat.id && (
-                        <Check size={18} color="#22C55E" />
-                      )}
-                    </Pressable>
-                  ))}
+                        <View className="flex-row items-center flex-1 mr-2">
+                          <CategoryIcon
+                            iconKey={cat.iconKey || cat.icon}
+                            size={16}
+                            color={active ? '#22C55E' : '#71717A'}
+                          />
+                          <Text
+                            className={`text-sm font-medium ml-3 ${
+                              active ? 'text-white' : 'text-zinc-400'
+                            }`}
+                          >
+                            {cat.name}
+                          </Text>
+                        </View>
+                        {active && <Check size={18} color="#22C55E" />}
+                      </Pressable>
+                    );
+                  })}
                 </ScrollView>
-              </View>
+              </FadeSlideIn>
             )}
 
             {/* Step 3: Meta Principal */}
             {step === 3 && (
-              <View>
+              <FadeSlideIn key="step-3">
                 <Text className="text-white text-xl font-bold mb-2">
                   ¿Cuál es tu meta principal con Zentia?
                 </Text>
@@ -175,7 +181,7 @@ export default function OnboardingScreen() {
                   Personalizaremos tu dashboard en base a este objetivo.
                 </Text>
 
-                <ScrollView className="max-h-[260px]">
+                <ScrollView className="max-h-[260px]" showsVerticalScrollIndicator={false}>
                   {GOALS.map((goal) => (
                     <Pressable
                       key={goal}
@@ -183,7 +189,7 @@ export default function OnboardingScreen() {
                       className={`p-4 rounded-2xl mb-2.5 flex-row items-center justify-between border ${
                         selectedGoal === goal
                           ? 'bg-[#27272A] border-[#22C55E]'
-                          : 'bg-[#18181B] border-zinc-800'
+                          : 'bg-[#18181B] border-zinc-800/80'
                       }`}
                     >
                       <Text
@@ -193,31 +199,28 @@ export default function OnboardingScreen() {
                       >
                         {goal}
                       </Text>
-                      {selectedGoal === goal && (
-                        <Check size={18} color="#22C55E" />
-                      )}
+                      {selectedGoal === goal && <Check size={18} color="#22C55E" />}
                     </Pressable>
                   ))}
                 </ScrollView>
-              </View>
+              </FadeSlideIn>
             )}
           </View>
 
           {/* Step Button */}
-          <Pressable
+          <SpringPressable
             onPress={handleNext}
-            className="w-full bg-[#EDEDED] active:bg-zinc-300 h-14 rounded-full items-center justify-center mt-4"
+            className="w-full bg-[#EDEDED] h-14 rounded-full items-center justify-center mt-4"
           >
             <Text className="text-[#09090B] font-bold text-sm tracking-wider uppercase">
               CONTINUAR
             </Text>
-          </Pressable>
+          </SpringPressable>
         </View>
       ) : (
         /* Screen 6: Success Screen ("¡Todo listo!") */
-        <View className="flex-1 justify-between items-center py-6">
+        <FadeSlideIn className="flex-1 justify-between items-center py-6">
           <View className="items-center w-full pt-8">
-            {/* Green Badge Check */}
             <View className="w-20 h-20 rounded-full bg-[#27272A] items-center justify-center mb-6 border border-zinc-800">
               <Check size={40} color="#22C55E" strokeWidth={3} />
             </View>
@@ -226,7 +229,6 @@ export default function OnboardingScreen() {
               ¡Todo listo!
             </Text>
 
-            {/* Checklist Card */}
             <View className="w-full bg-[#121214] border border-zinc-800/80 rounded-2xl p-5 mb-4">
               <View className="flex-row items-center mb-4">
                 <View className="w-6 h-6 rounded-full bg-emerald-950/80 items-center justify-center mr-3">
@@ -257,16 +259,15 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          {/* Finish Button */}
-          <Pressable
+          <SpringPressable
             onPress={handleFinish}
-            className="w-full bg-[#EDEDED] active:bg-zinc-300 h-14 rounded-full items-center justify-center mb-4 shadow-lg"
+            className="w-full bg-[#EDEDED] h-14 rounded-full items-center justify-center mb-4 shadow-lg"
           >
             <Text className="text-[#09090B] font-bold text-sm tracking-wider uppercase">
               ENTRAR A ZENTIA
             </Text>
-          </Pressable>
-        </View>
+          </SpringPressable>
+        </FadeSlideIn>
       )}
     </SafeAreaView>
   );

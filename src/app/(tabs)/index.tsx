@@ -14,6 +14,8 @@ import {
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { formatCurrency } from '@/utils/currency';
 
 const PERIOD_LABELS: Record<PeriodKey, string> = {
@@ -100,61 +102,78 @@ export default function DashboardScreen() {
         />
 
         {/* Balance Card (TASK-302) */}
-        <BalanceCard
-          balanceActual={summary.balanceActual}
-          totalIngresos={summary.totalIngresos}
-          totalGastos={summary.totalGastos}
-          isFetching={isFetching}
-          periodLabel={periodSubtitle}
-        />
+        <FadeSlideIn delay={40}>
+          <BalanceCard
+            balanceActual={summary.balanceActual}
+            totalIngresos={summary.totalIngresos}
+            totalGastos={summary.totalGastos}
+            isFetching={isFetching}
+            periodLabel={periodSubtitle}
+          />
+        </FadeSlideIn>
 
         {/* Savings Goal Card (Hexagonal In-Memory Feature) */}
-        <View className="bg-[#18181B] border border-zinc-800/80 rounded-2xl p-5 mb-6">
-          <View className="flex-row items-center justify-between mb-2">
-            <View className="flex-row items-center">
-              <Target size={18} color="#22C55E" />
-              <Text className="text-white text-sm font-semibold ml-2">
-                Meta de Ahorro Mensual
+        <FadeSlideIn delay={90}>
+          <View className="bg-[#18181B] border border-zinc-800/80 rounded-2xl p-5 mb-6">
+            <View className="flex-row items-center justify-between mb-2">
+              <View className="flex-row items-center">
+                <Target size={18} color="#22C55E" />
+                <Text className="text-white text-sm font-semibold ml-2">
+                  Meta de Ahorro Mensual
+                </Text>
+              </View>
+              <Text
+                className="text-[#22C55E] text-xs font-bold"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                {savingsProgressPercent}%
               </Text>
             </View>
-            <Text className="text-[#22C55E] text-xs font-bold">
-              {savingsProgressPercent}%
-            </Text>
-          </View>
 
-          <View className="h-2 bg-[#27272A] rounded-full overflow-hidden my-2">
-            <View
-              style={{ width: `${savingsProgressPercent}%` }}
-              className="h-full bg-[#22C55E] rounded-full"
-            />
-          </View>
+            <View className="h-2 bg-[#27272A] rounded-full overflow-hidden my-2">
+              <View
+                style={{ width: `${savingsProgressPercent}%` }}
+                className="h-full bg-[#22C55E] rounded-full"
+              />
+            </View>
 
-          <View className="flex-row justify-between items-center mt-1">
-            <Text className="text-zinc-400 text-xs">
-              Objetivo: {formatCurrency(savingsGoal)}
-            </Text>
-            <Text className="text-zinc-500 text-[11px]">
-              Base actual: {formatCurrency(effectiveSavingsBase)}
-            </Text>
+            <View className="flex-row justify-between items-center mt-1">
+              <Text
+                className="text-zinc-400 text-xs"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                Objetivo: {formatCurrency(savingsGoal)}
+              </Text>
+              <Text
+                className="text-zinc-500 text-[11px]"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                Base actual: {formatCurrency(effectiveSavingsBase)}
+              </Text>
+            </View>
           </View>
-        </View>
+        </FadeSlideIn>
 
         {/* Recent Transactions Preview (TASK-304) */}
-        <RecentTransactions
-          transactions={transactions}
-          categories={allCategories}
-          onViewAll={() => router.push('/(tabs)/transactions')}
-          onAddFirst={() => router.push('/(modal)/new-transaction')}
-        />
+        <FadeSlideIn delay={140}>
+          <RecentTransactions
+            transactions={transactions}
+            categories={allCategories}
+            onViewAll={() => router.push('/(tabs)/transactions')}
+            onAddFirst={() => router.push('/(modal)/new-transaction')}
+          />
+        </FadeSlideIn>
       </ScrollView>
 
       {/* Floating Add Action Button */}
-      <Pressable
+      <SpringPressable
         onPress={() => router.push('/(modal)/new-transaction')}
-        className="absolute bottom-6 right-6 bg-[#22C55E] w-14 h-14 rounded-full items-center justify-center shadow-2xl active:opacity-80"
+        scaleTo={0.93}
+        className="w-14 h-14 bg-[#22C55E] rounded-full items-center justify-center shadow-2xl"
+        style={{ position: 'absolute', bottom: 24, right: 24 }}
       >
         <Plus size={26} color="#000000" strokeWidth={2.5} />
-      </Pressable>
+      </SpringPressable>
     </SafeAreaView>
   );
 }

@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/services/api';
 import { GoogleLogo } from '@/components/ui/GoogleLogo';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { useGoogleLogin } from '@react-oauth/google';
 
 export default function LoginScreen() {
@@ -106,16 +108,16 @@ export default function LoginScreen() {
       </View>
 
       {/* Center Prompt */}
-      <View className="items-center px-4">
+      <FadeSlideIn className="items-center px-4">
         <Text className="text-zinc-400 text-xs font-bold tracking-[0.25em] uppercase text-center mb-8">
           INICIAR SESIÓN
         </Text>
 
-        {/* Google OAuth Button (Figma Spec) */}
-        <Pressable
+        {/* Google OAuth Button (Figma Spec + Apple spring press) */}
+        <SpringPressable
           onPress={handlePressGoogle}
           disabled={loading}
-          className="w-full bg-white active:bg-zinc-200 h-14 rounded-full flex-row items-center justify-center px-6 shadow-md mb-4"
+          className="w-full bg-white h-14 rounded-full flex-row items-center justify-center px-6 shadow-md mb-4"
         >
           {loading ? (
             <ActivityIndicator color="#18181B" />
@@ -127,7 +129,7 @@ export default function LoginScreen() {
               </Text>
             </>
           )}
-        </Pressable>
+        </SpringPressable>
 
         {/* Phone OTP Alternative */}
         <Pressable
@@ -152,7 +154,7 @@ export default function LoginScreen() {
             </Pressable>
           </View>
         ) : null}
-      </View>
+      </FadeSlideIn>
 
       {/* Footer Legal Terms (Figma Spec) */}
       <View className="items-center px-4 pb-2">

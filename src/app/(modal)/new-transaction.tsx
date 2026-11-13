@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,13 +19,15 @@ import { useCreateTransaction } from '@/hooks/useCreateTransaction';
 import { SegmentedTypeControl } from '@/components/finance/SegmentedTypeControl';
 import { MoneyInput } from '@/components/finance/MoneyInput';
 import { CategoryPicker } from '@/components/finance/CategoryPicker';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 
 export default function NewTransactionModal() {
   const router = useRouter();
 
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState<number | null>(1);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [description, setDescription] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -33,7 +35,16 @@ export default function NewTransactionModal() {
   const { categories, allCategories } = useCategories(type);
   const createMutation = useCreateTransaction();
 
-  // Si cambia el tipo y la categoría actual no pertenece, preseleccionar la primera disponible
+  const effectiveCategoryId = useMemo(() => {
+    if (
+      selectedCategoryId !== null &&
+      categories.some((cat) => cat.id === selectedCategoryId)
+    ) {
+      return selectedCategoryId;
+    }
+    return categories[0]?.id ?? null;
+  }, [selectedCategoryId, categories]);
+
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
     setValidationError(null);
@@ -42,9 +53,7 @@ export default function NewTransactionModal() {
       const isCatIncome = c.type === 'INCOME' || c.type === 'INGRESO';
       return isTargetIncome ? isCatIncome : !isCatIncome;
     });
-    if (available) {
-      setCategoryId(available.id);
-    }
+    setSelectedCategoryId(available?.id ?? null);
   };
 
   const notifyError = (title: string, message: string) => {
@@ -64,8 +73,8 @@ export default function NewTransactionModal() {
       return;
     }
 
-    if (!categoryId) {
-      notifyError('Categoría requerida', 'Por favor selecciona una categoría.');
+    if (!effectiveCategoryId || !categories.some((c) => c.id === effectiveCategoryId)) {
+      notifyError('Categoría requerida', 'Por favor selecciona una categoría compatible.');
       return;
     }
 
@@ -73,7 +82,7 @@ export default function NewTransactionModal() {
       await createMutation.mutateAsync({
         amount: numAmount,
         type,
-        categoryId,
+        categoryId: effectiveCategoryId,
         description: description.trim() || (type === 'EXPENSE' ? 'Gasto general' : 'Ingreso'),
         transactionDate: new Date().toISOString().split('T')[0],
       });
@@ -86,60 +95,66 @@ export default function NewTransactionModal() {
 
   return (
     <SafeAreaView className="flex-1 bg-black justify-between px-6 py-4">
-      {/* Top Modal Header */}
-      <View className="flex-row items-center justify-between mb-4">
-        <Text className="text-white text-lg font-bold">
-          Nuevo Movimiento
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 items-center justify-center active:opacity-70"
-        >
-          <X size={18} color="#FFFFFF" />
-        </Pressable>
+      <View>
+        {/* iOS Sheet Grab Handle */}
+        <View className="w-10 h-1 rounded-full bg-zinc-700/80 self-center mt-0.5 mb-3" />
+
+        {/* Top Modal Header */}
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-white text-lg font-bold">Nuevo Movimiento</Text>
+          <Pressable
+            onPress={() => router.back()}
+            className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800/80 items-center justify-center active:opacity-70"
+          >
+            <X size={18} color="#FFFFFF" />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-        {/* Type Selector (Gasto / Ingreso) */}
-        <SegmentedTypeControl value={type} onChange={handleTypeChange} />
+        <FadeSlideIn delay={20}>
+          <SegmentedTypeControl value={type} onChange={handleTypeChange} />
+        </FadeSlideIn>
 
-        {/* Money Input */}
-        <MoneyInput value={amount} onChangeText={setAmount} />
+        <FadeSlideIn delay={60}>
+          <MoneyInput value={amount} onChangeText={setAmount} />
+        </FadeSlideIn>
 
-        {/* Category Picker */}
-        <CategoryPicker
-          categories={categories}
-          selectedId={categoryId}
-          onSelect={setCategoryId}
-        />
-
-        {/* Description Input */}
-        <View className="bg-[#121214] border border-zinc-800 rounded-2xl p-4 mb-6">
-          <Text className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            Descripción (Opcional)
-          </Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Ej. Cena con amigos, Supermercado..."
-            placeholderTextColor="#52525B"
-            maxLength={255}
-            className="text-white text-base py-1"
+        <FadeSlideIn delay={100}>
+          <CategoryPicker
+            categories={categories}
+            selectedId={effectiveCategoryId}
+            onSelect={setSelectedCategoryId}
           />
-        </View>
+        </FadeSlideIn>
+
+        <FadeSlideIn delay={140}>
+          <View className="bg-[#121214] border border-zinc-800/90 rounded-2xl p-4 mb-6">
+            <Text className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-1">
+              Descripción (Opcional)
+            </Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Ej. Cena con amigos, Supermercado..."
+              placeholderTextColor="#52525B"
+              maxLength={255}
+              className="text-white text-base py-1"
+            />
+          </View>
+        </FadeSlideIn>
       </ScrollView>
 
-      {/* Submit Button */}
       <View className="pt-2 pb-4">
         {validationError ? (
           <Text className="text-red-400 text-xs text-center mb-3 font-medium">
             {validationError}
           </Text>
         ) : null}
-        <Pressable
+        <SpringPressable
           onPress={handleSubmit}
           disabled={createMutation.isPending}
-          className="w-full bg-[#EDEDED] active:bg-zinc-300 h-14 rounded-full items-center justify-center shadow-lg"
+          className="w-full bg-[#EDEDED] h-14 rounded-full items-center justify-center shadow-lg"
         >
           {createMutation.isPending ? (
             <ActivityIndicator color="#09090B" />
@@ -148,7 +163,7 @@ export default function NewTransactionModal() {
               REGISTRAR MOVIMIENTO
             </Text>
           )}
-        </Pressable>
+        </SpringPressable>
       </View>
     </SafeAreaView>
   );

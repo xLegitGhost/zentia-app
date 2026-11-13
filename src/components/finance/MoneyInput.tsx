@@ -13,7 +13,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
   label = 'Monto del Movimiento',
 }) => {
   return (
-    <View className="bg-[#121214] border border-zinc-800 rounded-3xl p-5 mb-6 items-center">
+    <View className="bg-[#121214] border border-zinc-800/90 rounded-3xl p-5 mb-6 items-center">
       <Text className="text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-2">
         {label}
       </Text>
@@ -26,6 +26,7 @@ export const MoneyInput: React.FC<MoneyInputProps> = ({
           placeholder="0.00"
           placeholderTextColor="#52525B"
           className="text-white text-4xl font-extrabold text-center min-w-[120px]"
+          style={{ fontVariant: ['tabular-nums'] }}
           autoFocus
         />
       </View>
