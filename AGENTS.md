@@ -75,3 +75,10 @@ Extracted from the official Zentia Figma design system (`https://www.figma.com/d
 * **Currency Card Input**: Dark `#27272A` container with centered or aligned `$ XX,XXX.XX` monetary mask.
 * **Status Badges & Checkmarks**: Rounded circular badges with `#22C55E` icons for success states.
 
+### 4. iOS / macOS-Like UX, Motion & Flow Guidelines (Apple HIG Style)
+* **Motion & Spring Physics**: Prefer natural, interruption-friendly spring transitions (`react-native-reanimated` / native Stack & sheet curves, subtle `0.97`–`0.98` press scale, smooth layout/opacity transitions) over abrupt state pops or heavy linear timers.
+* **Navigation & Flow**: Native iOS-style modal sheets (`presentation: 'modal'` / bottom-sheet feel), intuitive swipe/back gestures, keyboard-safe inputs with clear focus states, and optimistic UI updates that keep interactions instantaneous (`>= 60 FPS`).
+* **Visual Craft & Depth**: Crisp `1px` hairline separators (`border-zinc-800/80`), translucent/frosted surfaces where supported (`expo-glass-effect` / subtle backdrop blur), generous breathing room, SF Pro-inspired tabular numeric alignment (`tabular-nums`), and tactile micro-feedback (haptics on native where appropriate).
+* **Clarity & Restraint**: One primary focal action per view, progressive disclosure for secondary options (inline confirmations, clean segmented controls), and zero visual clutter.
+
+
