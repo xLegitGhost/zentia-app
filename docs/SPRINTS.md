@@ -86,10 +86,10 @@ gantt
 
 | ID | Tarea / Feature | Archivo(s) | Dependencias | Estado |
 |---|---|---|---|---|
-| **TASK-301** | Hook `useDashboardSummary(startDate, endDate)` consumiendo `GET /api/v1/transactions/dashboard` | `src/hooks/useDashboard.ts` | TASK-003 | ⏳ Pendiente |
-| **TASK-302** | Tarjetas de métricas: Balance Neto con color condicional (verde positivo / rojo negativo), Ingresos Totales y Gastos Totales | `src/components/dashboard/BalanceCard.tsx` | Design tokens | ⏳ Pendiente |
-| **TASK-303** | Selector dinámico de periodo temporal (Este mes, Mes anterior, Rango personalizado) | `src/components/dashboard/PeriodSelector.tsx` | UI tokens | ⏳ Pendiente |
-| **TASK-304** | Lista rápida de "Últimos Movimientos" en el dashboard con acceso directo a la vista de historial | `src/components/dashboard/RecentTransactions.tsx` | Sprint 2 | ⏳ Pendiente |
+| **TASK-301** | Hook `useDashboardSummary(startDate, endDate)` consumiendo `GET /api/v1/transactions/dashboard` | `src/hooks/useDashboard.ts` | TASK-003 | ✅ Completado |
+| **TASK-302** | Tarjetas de métricas: Balance Neto con color condicional (verde positivo / rojo negativo), Ingresos Totales y Gastos Totales | `src/components/dashboard/BalanceCard.tsx` | Design tokens | ✅ Completado |
+| **TASK-303** | Selector dinámico de periodo temporal (Este mes, Mes anterior, Rango personalizado) | `src/components/dashboard/PeriodSelector.tsx` | UI tokens | ✅ Completado |
+| **TASK-304** | Lista rápida de "Últimos Movimientos" en el dashboard con acceso directo a la vista de historial | `src/components/dashboard/RecentTransactions.tsx` | Sprint 2 | ✅ Completado |
 
 * **Criterio de Aceptación del Sprint 3:**
   * El cambio de mes en el selector actualiza instantáneamente los totales sin parpadeo de pantalla.

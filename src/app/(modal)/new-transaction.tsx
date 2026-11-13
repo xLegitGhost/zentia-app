@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
@@ -18,33 +27,45 @@ export default function NewTransactionModal() {
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(1);
   const [description, setDescription] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // RN-FIN-03: Solo categorías compatibles con el tipo de transacción
-  const { categories } = useCategories(type);
+  const { categories, allCategories } = useCategories(type);
   const createMutation = useCreateTransaction();
 
   // Si cambia el tipo y la categoría actual no pertenece, preseleccionar la primera disponible
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    const available = categories.find((c) =>
-      newType === 'INCOME' ? c.type === 'INCOME' : c.type === 'EXPENSE'
-    );
+    setValidationError(null);
+    const isTargetIncome = newType === 'INCOME' || newType === 'INGRESO';
+    const available = allCategories.find((c) => {
+      const isCatIncome = c.type === 'INCOME' || c.type === 'INGRESO';
+      return isTargetIncome ? isCatIncome : !isCatIncome;
+    });
     if (available) {
       setCategoryId(available.id);
     }
   };
 
+  const notifyError = (title: string, message: string) => {
+    setValidationError(message);
+    if (Platform.OS !== 'web') {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleSubmit = async () => {
+    setValidationError(null);
     const numAmount = parseFloat(amount.replace(/,/g, ''));
 
     // RN-FIN-01: El monto debe ser estrictamente mayor a cero
     if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('Monto inválido', 'El monto debe ser estrictamente mayor a $0.00');
+      notifyError('Monto inválido', 'El monto debe ser estrictamente mayor a $0.00');
       return;
     }
 
     if (!categoryId) {
-      Alert.alert('Categoría requerida', 'Por favor selecciona una categoría.');
+      notifyError('Categoría requerida', 'Por favor selecciona una categoría.');
       return;
     }
 
@@ -58,8 +79,8 @@ export default function NewTransactionModal() {
       });
 
       router.back();
-    } catch (error: any) {
-      Alert.alert('Error', 'No se pudo registrar la transacción. Intenta de nuevo.');
+    } catch {
+      notifyError('Error', 'No se pudo registrar la transacción. Intenta de nuevo.');
     }
   };
 
@@ -110,6 +131,11 @@ export default function NewTransactionModal() {
 
       {/* Submit Button */}
       <View className="pt-2 pb-4">
+        {validationError ? (
+          <Text className="text-red-400 text-xs text-center mb-3 font-medium">
+            {validationError}
+          </Text>
+        ) : null}
         <Pressable
           onPress={handleSubmit}
           disabled={createMutation.isPending}

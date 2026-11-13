@@ -1,60 +1,112 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Target, Plus } from 'lucide-react-native';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
-import { Target, TrendingUp, ArrowUpRight, Plus } from 'lucide-react-native';
+import { useCategories } from '@/hooks/useCategories';
+import {
+  DateRange,
+  getPeriodDateRange,
+  PeriodKey,
+  useDashboardSummary,
+} from '@/hooks/useDashboard';
+import { BalanceCard } from '@/components/dashboard/BalanceCard';
+import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
+import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { formatCurrency } from '@/utils/currency';
+
+const PERIOD_LABELS: Record<PeriodKey, string> = {
+  current_month: 'Este Mes',
+  previous_month: 'Mes Anterior',
+  custom: 'Rango Personalizado',
+};
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { profile } = useFinancialProfile();
+  const { allCategories } = useCategories();
 
-  const monthlyIncome = profile?.monthlyIncome || 25000;
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>('current_month');
+  const [customRange, setCustomRange] = useState<DateRange>(() =>
+    getPeriodDateRange('current_month')
+  );
+
+  const activeRange = useMemo(
+    () => getPeriodDateRange(selectedPeriod, customRange),
+    [selectedPeriod, customRange]
+  );
+
+  const { summary, transactions, isFetching, refetch } = useDashboardSummary(
+    activeRange.startDate,
+    activeRange.endDate
+  );
+
   const savingsGoal = profile?.monthlySavingsGoal || 5000;
-  const currentExpense = 450.5;
-  const currentBalance = monthlyIncome - currentExpense;
+  const effectiveSavingsBase =
+    summary.balanceActual > 0
+      ? summary.balanceActual
+      : Math.max(0, (profile?.monthlyIncome ?? 0) - summary.totalGastos);
+
   const savingsProgressPercent = Math.min(
     100,
-    Math.round((currentBalance / savingsGoal) * 100)
+    Math.max(0, Math.round((effectiveSavingsBase / savingsGoal) * 100))
   );
+
+  const periodSubtitle =
+    selectedPeriod === 'custom'
+      ? `${activeRange.startDate} → ${activeRange.endDate}`
+      : PERIOD_LABELS[selectedPeriod];
 
   return (
     <SafeAreaView className="flex-1 bg-black px-6 pt-4">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isFetching}
+            onRefresh={refetch}
+            tintColor="#22C55E"
+            colors={['#22C55E']}
+          />
+        }
+      >
         {/* Top Brand Bar */}
-        <View className="flex-row items-center justify-between mb-6">
+        <View className="flex-row items-center justify-between mb-5">
           <Text className="text-white text-xs font-bold tracking-[0.25em] uppercase opacity-70">
             Z E N T I A
           </Text>
-          <View className="bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1">
-            <Text className="text-zinc-400 text-xs font-medium">Este Mes</Text>
+          <View className="bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1 flex-row items-center">
+            <View
+              className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                summary.isDemoData ? 'bg-amber-400' : 'bg-[#22C55E]'
+              }`}
+            />
+            <Text className="text-zinc-400 text-xs font-medium">
+              {summary.isDemoData ? 'Modo Demo' : 'Sincronizado'}
+            </Text>
           </View>
         </View>
 
-        {/* Main Balance Card (Figma OLED Spec) */}
-        <View className="bg-[#121214] border border-zinc-800 rounded-3xl p-6 mb-5">
-          <Text className="text-zinc-400 text-xs font-medium tracking-wide uppercase mb-1">
-            Balance Disponible
-          </Text>
-          <Text className="text-white text-3xl font-extrabold tracking-tight mb-4">
-            $ {currentBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-          </Text>
+        {/* Period Selector (TASK-303) */}
+        <PeriodSelector
+          selectedPeriod={selectedPeriod}
+          customRange={customRange}
+          onSelectPeriod={setSelectedPeriod}
+          onApplyCustomRange={(range) => {
+            setCustomRange(range);
+            setSelectedPeriod('custom');
+          }}
+        />
 
-          <View className="flex-row items-center justify-between pt-4 border-t border-zinc-800/80">
-            <View>
-              <Text className="text-zinc-500 text-xs font-medium mb-0.5">Ingreso Estimado</Text>
-              <Text className="text-[#22C55E] text-base font-bold">
-                +${monthlyIncome.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-              </Text>
-            </View>
-            <View className="items-end">
-              <Text className="text-zinc-500 text-xs font-medium mb-0.5">Gastos Reales</Text>
-              <Text className="text-red-400 text-base font-bold">
-                -${currentExpense.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-              </Text>
-            </View>
-          </View>
-        </View>
+        {/* Balance Card (TASK-302) */}
+        <BalanceCard
+          balanceActual={summary.balanceActual}
+          totalIngresos={summary.totalIngresos}
+          totalGastos={summary.totalGastos}
+          isFetching={isFetching}
+          periodLabel={periodSubtitle}
+        />
 
         {/* Savings Goal Card (Hexagonal In-Memory Feature) */}
         <View className="bg-[#18181B] border border-zinc-800/80 rounded-2xl p-5 mb-6">
@@ -70,7 +122,6 @@ export default function DashboardScreen() {
             </Text>
           </View>
 
-          {/* Goal Progress Bar */}
           <View className="h-2 bg-[#27272A] rounded-full overflow-hidden my-2">
             <View
               style={{ width: `${savingsProgressPercent}%` }}
@@ -80,38 +131,21 @@ export default function DashboardScreen() {
 
           <View className="flex-row justify-between items-center mt-1">
             <Text className="text-zinc-400 text-xs">
-              Objetivo: ${savingsGoal.toLocaleString('es-MX')}
+              Objetivo: {formatCurrency(savingsGoal)}
             </Text>
             <Text className="text-zinc-500 text-[11px]">
-              Actual: ${currentBalance.toLocaleString('es-MX')}
+              Base actual: {formatCurrency(effectiveSavingsBase)}
             </Text>
           </View>
         </View>
 
-        {/* Quick Actions Header */}
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-white text-lg font-bold">
-            Movimientos Recientes
-          </Text>
-          <Pressable
-            onPress={() => router.push('/(tabs)/transactions')}
-            className="active:opacity-70 flex-row items-center"
-          >
-            <Text className="text-[#22C55E] text-xs font-semibold mr-1">Ver todos</Text>
-            <ArrowUpRight size={14} color="#22C55E" />
-          </Pressable>
-        </View>
-
-        {/* Empty / Placeholder State */}
-        <View className="bg-[#121214] border border-zinc-900 rounded-2xl p-6 items-center justify-center mb-8">
-          <TrendingUp size={28} color="#71717A" className="mb-2" />
-          <Text className="text-zinc-300 text-sm font-medium mb-1 mt-2">
-            Historial listo para registrar
-          </Text>
-          <Text className="text-zinc-500 text-xs text-center leading-relaxed max-w-[240px]">
-            Agrega tu primera transacción para ver el impacto en tu meta de ahorro.
-          </Text>
-        </View>
+        {/* Recent Transactions Preview (TASK-304) */}
+        <RecentTransactions
+          transactions={transactions}
+          categories={allCategories}
+          onViewAll={() => router.push('/(tabs)/transactions')}
+          onAddFirst={() => router.push('/(modal)/new-transaction')}
+        />
       </ScrollView>
 
       {/* Floating Add Action Button */}

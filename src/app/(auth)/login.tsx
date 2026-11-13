@@ -3,6 +3,7 @@ import { View, Text, Pressable, ActivityIndicator, Alert, Platform } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { API_BASE_URL } from '@/services/api';
 import { GoogleLogo } from '@/components/ui/GoogleLogo';
 import { useGoogleLogin } from '@react-oauth/google';
 
@@ -10,8 +11,10 @@ export default function LoginScreen() {
   const router = useRouter();
   const { loginWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAuthSuccess = (res: any) => {
+    setErrorMessage(null);
     if (res.onboardingCompleted || res.user?.onboardingCompleted) {
       router.replace('/(tabs)');
     } else {
@@ -24,12 +27,13 @@ export default function LoginScreen() {
     onSuccess: async (tokenResponse) => {
       try {
         setLoading(true);
+        setErrorMessage(null);
         // Obtener datos del perfil directamente desde Google con el access token
         const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
         }).then((res) => res.json());
 
-        // Enviar payload exacto requerido por UserService.java en Spring Boot
+        // Enviar payload exacto requerido por POST /api/v1/auth/google
         const res = await loginWithGoogle({
           googleId: userInfo.sub,
           email: userInfo.email,
@@ -41,45 +45,54 @@ export default function LoginScreen() {
         handleAuthSuccess(res);
       } catch (error: any) {
         console.warn('Error procesando login con backend:', error);
-        Alert.alert(
-          'Error de Conexión',
-          'El backend no respondió en http://localhost:8080. ¿Deseas entrar en modo demo?',
-          [
+        const detail =
+          error?.response?.data?.error ||
+          error?.message ||
+          `No se pudo conectar con ${API_BASE_URL}`;
+        setErrorMessage(detail);
+        if (Platform.OS !== 'web') {
+          Alert.alert('Error de Conexión', `${detail}. ¿Deseas entrar en modo demo?`, [
             { text: 'Cancelar', style: 'cancel' },
             { text: 'Modo Demo', onPress: () => router.replace('/(onboarding)') },
-          ]
-        );
+          ]);
+        }
       } finally {
         setLoading(false);
       }
     },
     onError: (errorResponse) => {
       console.warn('Error en Google OAuth:', errorResponse);
-      Alert.alert(
-        'Google OAuth',
-        'No se pudo completar la autenticación con Google. Revisa tu Client ID o continúa en modo demo.',
-        [
+      const msg =
+        errorResponse?.error_description ||
+        errorResponse?.error ||
+        'No se pudo completar la autenticación con Google. Verifica el origen autorizado en Google Cloud Console.';
+      setErrorMessage(msg);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Google OAuth', msg, [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Modo Demo', onPress: () => router.replace('/(onboarding)') },
-        ]
-      );
+        ]);
+      }
     },
   });
 
   const handlePressGoogle = () => {
+    setErrorMessage(null);
     if (Platform.OS === 'web') {
       try {
         triggerGoogleWebLogin();
-      } catch (e) {
-        // Fallback si no hay client ID configurado
+      } catch (e: any) {
         console.warn('Error al invocar Google Login:', e);
-        Alert.alert('Google Client ID', 'Verifica configurar EXPO_PUBLIC_GOOGLE_CLIENT_ID en tu archivo .env.');
+        setErrorMessage(
+          e?.message || 'Error al invocar Google Login. Verifica EXPO_PUBLIC_GOOGLE_CLIENT_ID en .env.'
+        );
       }
     } else {
-      // Modo demo para móvil en lo que se compila dev build nativo
-      Alert.alert('Móvil', 'Para móvil físico se usará el login OTP o el build nativo. Iniciando en modo demo...', [
-        { text: 'Continuar', onPress: () => router.replace('/(onboarding)') },
-      ]);
+      Alert.alert(
+        'Móvil',
+        'Para móvil físico se usará el login OTP o el build nativo. Iniciando en modo demo...',
+        [{ text: 'Continuar', onPress: () => router.replace('/(onboarding)') }]
+      );
     }
   };
 
@@ -125,6 +138,20 @@ export default function LoginScreen() {
             O ingresar con número de teléfono
           </Text>
         </Pressable>
+
+        {errorMessage ? (
+          <View className="w-full mt-4 bg-red-950/50 border border-red-900 rounded-2xl p-3">
+            <Text className="text-red-300 text-xs text-center mb-2">{errorMessage}</Text>
+            <Pressable
+              onPress={() => router.replace('/(onboarding)')}
+              className="py-2 rounded-full bg-zinc-900 border border-zinc-700 items-center active:opacity-80"
+            >
+              <Text className="text-zinc-200 text-xs font-semibold">
+                Continuar en Modo Demo
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       {/* Footer Legal Terms (Figma Spec) */}
