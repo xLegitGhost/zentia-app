@@ -142,22 +142,22 @@ export const KaluriPromoCard: React.FC = () => {
   };
 
   return (
-    <View className="bg-[#121214] border border-emerald-900/50 rounded-3xl p-5 mb-6">
+    <View className="bg-[#121214] border border-zinc-800 rounded-3xl p-5 mb-6">
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center">
-          <View className="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 items-center justify-center mr-2">
-            <Camera size={14} color="#34D399" />
+          <View className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/30 items-center justify-center mr-2">
+            <Sparkles size={14} color="#FBBF24" />
           </View>
-          <Text className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider">
+          <Text className="text-amber-300 text-[11px] font-bold uppercase tracking-wider">
             App Hermana • Kaluri.app
           </Text>
         </View>
         <Pressable
           onPress={() => Linking.openURL(KALURI_URL)}
-          className="flex-row items-center px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-700/50 active:opacity-80"
+          className="flex-row items-center px-2.5 py-1 rounded-full bg-[#27272A] active:opacity-80"
         >
-          <Text className="text-emerald-300 text-[11px] font-semibold mr-1">Abrir</Text>
-          <ExternalLink size={11} color="#34D399" />
+          <Text className="text-[#22C55E] text-[11px] font-semibold mr-1">Abrir</Text>
+          <ExternalLink size={11} color="#22C55E" />
         </Pressable>
       </View>
 
@@ -170,10 +170,10 @@ export const KaluriPromoCard: React.FC = () => {
 
       <Pressable
         onPress={handleCopyCode}
-        className="bg-emerald-950/25 border border-dashed border-emerald-500/40 rounded-2xl px-4 py-3 flex-row items-center justify-between active:opacity-80"
+        className="bg-[#18181B] border border-dashed border-amber-500/40 rounded-2xl px-4 py-3 flex-row items-center justify-between active:opacity-80"
       >
         <View className="flex-row items-center">
-          <Tag size={15} color="#34D399" />
+          <Tag size={15} color="#FBBF24" />
           <View className="ml-2.5">
             <Text className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold">
               Código de descuento
