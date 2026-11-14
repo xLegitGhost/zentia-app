@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
-import { Check, Copy, ExternalLink, Sparkles, Tag } from 'lucide-react-native';
+import { Camera, Check, Copy, ExternalLink, Sparkles, Tag } from 'lucide-react-native';
+import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 
 export const KALURI_URL = 'https://kaluri.app';
 export const KALURI_PROMO_CODE = 'URIEL15';
@@ -84,15 +86,32 @@ export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({
   if (!matches) return null;
 
   return (
-    <Pressable
-      onPress={() => Linking.openURL(KALURI_URL)}
-      className="flex-row items-center px-1 -mt-2 mb-4 active:opacity-70"
-    >
-      <Sparkles size={11} color="#A1A1AA" />
-      <Text className="text-zinc-500 text-[11px] ml-1.5 flex-1">
-        Also try <Text className="text-amber-300/90 font-medium">Kaluri.app</Text> — macros con una foto
-      </Text>
-    </Pressable>
+    <FadeSlideIn offsetY={8} className="mb-5">
+      <SpringPressable
+        onPress={() => Linking.openURL(KALURI_URL)}
+        className="bg-emerald-950/35 border border-emerald-500/35 rounded-2xl px-4 py-3.5 flex-row items-center justify-between"
+      >
+        <View className="flex-row items-center flex-1 mr-3">
+          <View className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 items-center justify-center mr-3">
+            <Camera size={16} color="#34D399" />
+          </View>
+          <View className="flex-1">
+            <View className="flex-row items-center gap-1.5">
+              <Text className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                Also try Kaluri.app
+              </Text>
+              <View className="bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">
+                <Text className="text-emerald-300 text-[9px] font-bold">IA • MACROS</Text>
+              </View>
+            </View>
+            <Text className="text-zinc-300 text-xs mt-0.5 leading-snug">
+              Calcula calorías y macros de tu comida con una foto.
+            </Text>
+          </View>
+        </View>
+        <ExternalLink size={14} color="#34D399" />
+      </SpringPressable>
+    </FadeSlideIn>
   );
 };
 
@@ -123,22 +142,22 @@ export const KaluriPromoCard: React.FC = () => {
   };
 
   return (
-    <View className="bg-[#121214] border border-zinc-800 rounded-3xl p-5 mb-6">
+    <View className="bg-[#121214] border border-emerald-900/50 rounded-3xl p-5 mb-6">
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center">
-          <View className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/30 items-center justify-center mr-2">
-            <Sparkles size={14} color="#FBBF24" />
+          <View className="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 items-center justify-center mr-2">
+            <Camera size={14} color="#34D399" />
           </View>
-          <Text className="text-amber-300 text-[11px] font-bold uppercase tracking-wider">
+          <Text className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider">
             App Hermana • Kaluri.app
           </Text>
         </View>
         <Pressable
           onPress={() => Linking.openURL(KALURI_URL)}
-          className="flex-row items-center px-2.5 py-1 rounded-full bg-[#27272A] active:opacity-80"
+          className="flex-row items-center px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-700/50 active:opacity-80"
         >
-          <Text className="text-[#22C55E] text-[11px] font-semibold mr-1">Abrir</Text>
-          <ExternalLink size={11} color="#22C55E" />
+          <Text className="text-emerald-300 text-[11px] font-semibold mr-1">Abrir</Text>
+          <ExternalLink size={11} color="#34D399" />
         </Pressable>
       </View>
 
@@ -151,10 +170,10 @@ export const KaluriPromoCard: React.FC = () => {
 
       <Pressable
         onPress={handleCopyCode}
-        className="bg-[#18181B] border border-dashed border-amber-500/40 rounded-2xl px-4 py-3 flex-row items-center justify-between active:opacity-80"
+        className="bg-emerald-950/25 border border-dashed border-emerald-500/40 rounded-2xl px-4 py-3 flex-row items-center justify-between active:opacity-80"
       >
         <View className="flex-row items-center">
-          <Tag size={15} color="#FBBF24" />
+          <Tag size={15} color="#34D399" />
           <View className="ml-2.5">
             <Text className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold">
               Código de descuento
