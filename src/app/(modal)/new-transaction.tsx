@@ -29,6 +29,7 @@ export default function NewTransactionModal() {
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [hasPickedCategory, setHasPickedCategory] = useState(false);
   const [description, setDescription] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -54,6 +55,7 @@ export default function NewTransactionModal() {
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
     setValidationError(null);
+    setHasPickedCategory(false);
     const isTargetIncome = newType === 'INCOME' || newType === 'INGRESO';
     const available = allCategories.find((c) => {
       const isCatIncome = c.type === 'INCOME' || c.type === 'INGRESO';
@@ -130,11 +132,14 @@ export default function NewTransactionModal() {
           <CategoryPicker
             categories={categories}
             selectedId={effectiveCategoryId}
-            onSelect={setSelectedCategoryId}
+            onSelect={(id) => {
+              setSelectedCategoryId(id);
+              setHasPickedCategory(true);
+            }}
           />
         </FadeSlideIn>
 
-        <KaluriFoodHint categoryName={selectedCategoryName} />
+        <KaluriFoodHint categoryName={selectedCategoryName} visible={hasPickedCategory} />
 
         <FadeSlideIn delay={140}>
           <View className="bg-[#121214] border border-zinc-800/90 rounded-2xl p-4 mb-6">

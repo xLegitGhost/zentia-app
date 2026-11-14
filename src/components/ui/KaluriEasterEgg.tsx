@@ -67,11 +67,17 @@ export const KaluriSplashBanner: React.FC<KaluriSplashBannerProps> = ({
 
 interface KaluriFoodHintProps {
   categoryName?: string;
+  visible?: boolean;
 }
 
 const FOOD_OR_HEALTH_KEYWORDS = ['comida', 'restaurantes', 'salud', 'despensa', 'antojos'];
 
-export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({ categoryName }) => {
+export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({
+  categoryName,
+  visible = true,
+}) => {
+  if (!visible) return null;
+
   const lower = (categoryName ?? '').toLowerCase();
   const matches = FOOD_OR_HEALTH_KEYWORDS.some((kw) => lower.includes(kw));
   if (!matches) return null;
@@ -79,16 +85,12 @@ export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({ categoryName }) 
   return (
     <Pressable
       onPress={() => Linking.openURL(KALURI_URL)}
-      className="bg-amber-950/25 border border-amber-800/40 rounded-2xl px-4 py-3 mb-5 flex-row items-center justify-between active:opacity-80"
+      className="flex-row items-center px-1 -mt-2 mb-4 active:opacity-70"
     >
-      <View className="flex-row items-center flex-1 mr-2">
-        <Sparkles size={14} color="#FBBF24" />
-        <Text className="text-amber-200/90 text-xs ml-2.5 leading-snug flex-1">
-          Also try <Text className="font-bold text-amber-300">Kaluri.app</Text> — calcula
-          calorías y macros de tu comida mexicana con una foto.
-        </Text>
-      </View>
-      <ExternalLink size={13} color="#FBBF24" />
+      <Sparkles size={11} color="#A1A1AA" />
+      <Text className="text-zinc-500 text-[11px] ml-1.5 flex-1">
+        Also try <Text className="text-amber-300/90 font-medium">Kaluri.app</Text> — macros con una foto
+      </Text>
     </Pressable>
   );
 };
