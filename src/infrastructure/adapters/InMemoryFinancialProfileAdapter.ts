@@ -2,8 +2,6 @@ import { FinancialProfile } from '@/domain/models/FinancialProfile';
 import { FinancialProfileRepositoryPort } from '@/domain/ports/FinancialProfileRepositoryPort';
 import { storage } from '@/services/storage';
 
-const PROFILE_STORAGE_KEY = 'zentia_financial_profile';
-
 /**
  * Adaptador de infraestructura en memoria con hidratación local.
  * Implementa FinancialProfileRepositoryPort aislando la UI del backend.
@@ -15,8 +13,8 @@ export class InMemoryFinancialProfileAdapter implements FinancialProfileReposito
     if (this.memoryStore) {
       return this.memoryStore;
     }
-    // Hidratar desde storage local para persistencia entre recargas
-    const cached = await storage.getUserData<FinancialProfile>();
+    // Hidratar desde su propia llave dedicada para no sobrescribir zentia_user_data
+    const cached = await storage.getFinancialProfile<FinancialProfile>();
     if (cached) {
       this.memoryStore = cached;
       return cached;
@@ -30,12 +28,13 @@ export class InMemoryFinancialProfileAdapter implements FinancialProfileReposito
       updatedAt: new Date().toISOString(),
     };
     this.memoryStore = profile;
-    await storage.setUserData(profile);
+    await storage.setFinancialProfile(profile);
     return profile;
   }
 
   async clearProfile(): Promise<void> {
     this.memoryStore = null;
+    await storage.removeFinancialProfile();
   }
 }
 

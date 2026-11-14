@@ -30,14 +30,9 @@ export function useFinancialProfile() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: Omit<FinancialProfile, 'updatedAt'>) => {
-      // Guardar siempre en memoria (arquitectura hexagonal sin dependencia dura)
       const localProfile = await financialProfileRepository.saveProfile(data);
       if (isAuthenticated) {
-        try {
-          return await httpFinancialProfileRepository.saveProfile(data);
-        } catch (err) {
-          console.warn('No se pudo sincronizar onboarding con backend, usando perfil local:', err);
-        }
+        return await httpFinancialProfileRepository.saveProfile(data);
       }
       return localProfile;
     },

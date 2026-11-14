@@ -15,6 +15,13 @@ export const api = axios.create({
   },
 });
 
+// Callback opcional para sincronizar el cierre de sesión en AuthContext ante un 401
+let unauthorizedHandler: (() => void | Promise<void>) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void | Promise<void>) | null) {
+  unauthorizedHandler = handler;
+}
+
 // Interceptor para inyectar automáticamente el Bearer JWT Token
 api.interceptors.request.use(async (config) => {
   const token = await storage.getToken();
@@ -30,6 +37,9 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response && error.response.status === 401) {
       await storage.clearSession();
+      if (unauthorizedHandler) {
+        await unauthorizedHandler();
+      }
     }
     return Promise.reject(error);
   }

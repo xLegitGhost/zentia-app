@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,10 +12,18 @@ export default function WelcomeScreen() {
   useEffect(() => {
     if (!isLoading) {
       SplashScreen.hideAsync().catch(() => {});
+      if (isAuthenticated) {
+        if (user?.onboardingCompleted) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/(onboarding)');
+        }
+      }
     }
-  }, [isLoading]);
+  }, [isLoading, isAuthenticated, user?.onboardingCompleted, router]);
 
   const handleStart = () => {
+    if (isLoading) return;
     if (isAuthenticated) {
       if (user?.onboardingCompleted) {
         router.replace('/(tabs)');
@@ -26,6 +34,17 @@ export default function WelcomeScreen() {
       router.push('/(auth)/login');
     }
   };
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <SafeAreaView className="flex-1 bg-black items-center justify-center">
+        <Text className="text-white text-xs font-bold tracking-[0.3em] uppercase opacity-70 mb-4">
+          Z E N T I A
+        </Text>
+        <ActivityIndicator color="#22C55E" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView

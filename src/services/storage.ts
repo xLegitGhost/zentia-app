@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 const JWT_KEY = 'zentia_jwt_token';
 const USER_KEY = 'zentia_user_data';
+const FINANCIAL_PROFILE_KEY = 'zentia_financial_profile';
 const BIOMETRICS_KEY = 'zentia_biometrics_enabled';
 const TUTORIAL_DISMISSED_KEY = 'zentia_tutorial_dismissed';
 
@@ -118,8 +119,49 @@ export const storage = {
     return val === 'true';
   },
 
+  async setFinancialProfile(data: object): Promise<void> {
+    const raw = JSON.stringify(data);
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.setItem(FINANCIAL_PROFILE_KEY, raw);
+      } catch (e) {}
+      return;
+    }
+    await SecureStore.setItemAsync(FINANCIAL_PROFILE_KEY, raw);
+  },
+
+  async getFinancialProfile<T>(): Promise<T | null> {
+    let raw: string | null = null;
+    if (Platform.OS === 'web') {
+      try {
+        raw = localStorage.getItem(FINANCIAL_PROFILE_KEY);
+      } catch (e) {
+        return null;
+      }
+    } else {
+      raw = await SecureStore.getItemAsync(FINANCIAL_PROFILE_KEY);
+    }
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  },
+
+  async removeFinancialProfile(): Promise<void> {
+    if (Platform.OS === 'web') {
+      try {
+        localStorage.removeItem(FINANCIAL_PROFILE_KEY);
+      } catch (e) {}
+      return;
+    }
+    await SecureStore.deleteItemAsync(FINANCIAL_PROFILE_KEY);
+  },
+
   async clearSession(): Promise<void> {
     await this.removeToken();
+    await this.removeFinancialProfile();
     if (Platform.OS === 'web') {
       try {
         localStorage.removeItem(USER_KEY);

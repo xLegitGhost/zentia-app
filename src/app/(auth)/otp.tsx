@@ -39,8 +39,8 @@ export default function OtpScreen() {
     }
     try {
       setLoading(true);
-      await verifyOtp(phoneNumber, code);
-      router.replace('/(tabs)');
+      const res = await verifyOtp(phoneNumber, code);
+      router.replace(res.onboardingCompleted ? '/(tabs)' : '/(onboarding)');
     } catch (error: any) {
       const msg = error.response?.data?.error || 'Código OTP inválido o expirado.';
       Alert.alert('Error', msg);

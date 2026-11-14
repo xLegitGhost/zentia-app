@@ -28,13 +28,14 @@ const GOALS = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
-  const { saveProfile } = useFinancialProfile();
+  const { saveProfile, isSaving } = useFinancialProfile();
   const { categories: expenseCategories } = useCategories('EXPENSE');
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [income, setIncome] = useState('25000');
   const [selectedCategory, setSelectedCategory] = useState<number>(1);
   const [selectedGoal, setSelectedGoal] = useState(GOALS[0]);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const handleNext = () => {
     if (step < 3) {
@@ -45,17 +46,21 @@ export default function OnboardingScreen() {
   };
 
   const handleFinish = async () => {
+    setSyncError(null);
     try {
       await saveProfile({
         monthlyIncome: Number(income) || 25000,
         monthlySavingsGoal: (Number(income) || 25000) * 0.2, // Meta sugerida del 20%
         priorityCategoryId: selectedCategory,
       });
-    } catch (e) {
-      console.warn('Error guardando perfil financiero:', e);
+      await completeOnboarding();
+      router.replace('/(tabs)');
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.error ||
+        'No se pudo guardar tu onboarding en el servidor. Verifica tu conexión e intenta de nuevo.';
+      setSyncError(msg);
     }
-    await completeOnboarding();
-    router.replace('/(tabs)');
   };
 
   return (
@@ -273,14 +278,34 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          <SpringPressable
-            onPress={handleFinish}
-            className="w-full bg-[#EDEDED] h-14 rounded-full items-center justify-center mb-4 shadow-lg"
-          >
-            <Text className="text-[#09090B] font-bold text-sm tracking-wider uppercase">
-              ENTRAR A ZENTIA
-            </Text>
-          </SpringPressable>
+          <View className="w-full pb-4">
+            {syncError ? (
+              <View className="bg-red-950/50 border border-red-900 rounded-2xl p-3 mb-3">
+                <Text className="text-red-300 text-xs text-center mb-2">{syncError}</Text>
+                <Pressable
+                  onPress={async () => {
+                    await completeOnboarding();
+                    router.replace('/(tabs)');
+                  }}
+                  className="py-1.5 rounded-full bg-zinc-900 border border-zinc-700 items-center active:opacity-80"
+                >
+                  <Text className="text-zinc-200 text-[11px] font-semibold">
+                    Continuar solo en local
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            <SpringPressable
+              onPress={handleFinish}
+              disabled={isSaving}
+              className="w-full bg-[#EDEDED] h-14 rounded-full items-center justify-center shadow-lg"
+            >
+              <Text className="text-[#09090B] font-bold text-sm tracking-wider uppercase">
+                {isSaving ? 'GUARDANDO...' : syncError ? 'REINTENTAR Y ENTRAR' : 'ENTRAR A ZENTIA'}
+              </Text>
+            </SpringPressable>
+          </View>
         </FadeSlideIn>
       )}
       </KeyboardAvoidingView>
