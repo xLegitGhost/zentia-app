@@ -1,6 +1,6 @@
 # ✨ Zentia — Finanzas Personales Multiplataforma
 
-> **Claridad financiera en cada movimiento.** Aplicación móvil y web (`iOS`, `Android` y `Web`) orientada a registrar ingresos, gastos y metas de ahorro sin fricción, con arquitectura desacoplada, caché consistente y experiencia visual OLED estilo Apple HIG. 🚀
+> **Claridad financiera en cada movimiento.** Aplicación móvil y web (`iOS`, `Android` y `Web`) orientada a registrar ingresos, gastos y metas de ahorro sin fricción, con arquitectura desacoplada, caché consistente y interfaz fluida.
 
 ---
 
