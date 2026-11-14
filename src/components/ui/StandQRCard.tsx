@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, Linking } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import QRCode from 'qrcode';
 import { QrCode, ExternalLink } from 'lucide-react-native';
+import { openSafeExternalUrl } from '@/services/security';
 
 const DEFAULT_DEMO_URL =
   process.env.EXPO_PUBLIC_DEMO_URL || 'https://zentia.vercel.app';
@@ -32,7 +33,9 @@ export const StandQRCard: React.FC<StandQRCardProps> = ({ url = DEFAULT_DEMO_URL
           <Text className="text-white text-sm font-bold ml-2">QR Demo Stand</Text>
         </View>
         <Pressable
-          onPress={() => Linking.openURL(url)}
+          onPress={() => {
+            void openSafeExternalUrl(url);
+          }}
           className="flex-row items-center px-2.5 py-1 rounded-full bg-[#27272A] active:opacity-80"
         >
           <Text className="text-[#22C55E] text-[11px] font-semibold mr-1">Abrir</Text>

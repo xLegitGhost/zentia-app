@@ -193,11 +193,11 @@ zentia-frontend/
 │   ├── domain/                     # Modelos puros y puertos (Hexagonal Architecture)
 │   ├── infrastructure/adapters/    # HttpFinancialProfileAdapter & InMemoryFinancialProfileAdapter
 │   ├── hooks/                      # useDashboard, useCategories, useFinancialProfile, useIdempotencyKey y mutaciones
-│   ├── services/                   # api.ts, idempotency.ts, storage.ts, cacheStorage.ts, transactionCache.ts, biometrics.ts
+│   ├── services/                   # api.ts, idempotency.ts, security.ts, storage.ts, cacheStorage.ts, transactionCache.ts, biometrics.ts
 │   ├── types/                      # Contratos DTO TypeScript alineados con Spring Boot
 │   └── utils/                      # Formateo monetario tabular
 ├── docs/                           # PRD.md, SPRINTS.md, QA_CHECKLIST.md
-└── vercel.json                     # Build estático Web y rewrites SPA
+└── vercel.json                     # Build estático Web, headers CSP/seguridad y rewrites SPA
 ```
 
 ---
@@ -239,4 +239,4 @@ npx expo export -p web
 
 ### Despliegue en Vercel (Web)
 
-`vercel.json` configura el build estático automático mediante `npx expo export -p web` sirviendo `dist/` con `cleanUrls: true` y fallback hacia `/index.html`.
+`vercel.json` configura el build estático automático mediante `npx expo export -p web` sirviendo `dist/` con `cleanUrls: true`, headers HTTP de seguridad (`Content-Security-Policy` sin `'unsafe-eval'`/`'unsafe-inline'` en scripts, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` y `Permissions-Policy`) y fallback hacia `/index.html`.

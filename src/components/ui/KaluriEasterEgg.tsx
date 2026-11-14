@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { Camera, Check, Copy, ExternalLink, Sparkles, Tag } from 'lucide-react-native';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import { openSafeExternalUrl } from '@/services/security';
 
 export const KALURI_URL = 'https://kaluri.app';
 export const KALURI_PROMO_CODE = 'URIEL15';
@@ -34,7 +35,9 @@ export const KaluriSplashBanner: React.FC<KaluriSplashBannerProps> = ({
   if (variant === 'card') {
     return (
       <Pressable
-        onPress={() => Linking.openURL(KALURI_URL)}
+        onPress={() => {
+          void openSafeExternalUrl(KALURI_URL);
+        }}
         className="bg-[#121214] border border-zinc-800/90 rounded-3xl p-4 mb-5 flex-row items-center justify-between active:opacity-80"
       >
         <View className="flex-row items-center flex-1 mr-3">
@@ -57,7 +60,9 @@ export const KaluriSplashBanner: React.FC<KaluriSplashBannerProps> = ({
 
   return (
     <Pressable
-      onPress={() => Linking.openURL(KALURI_URL)}
+      onPress={() => {
+        void openSafeExternalUrl(KALURI_URL);
+      }}
       className="flex-row items-center justify-center py-1.5 px-3 rounded-full bg-zinc-900/70 border border-zinc-800/70 active:opacity-75"
     >
       <Sparkles size={11} color="#FBBF24" />
@@ -88,7 +93,9 @@ export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({
   return (
     <FadeSlideIn offsetY={8} className="mb-5">
       <SpringPressable
-        onPress={() => Linking.openURL(KALURI_URL)}
+        onPress={() => {
+          void openSafeExternalUrl(KALURI_URL);
+        }}
         className="bg-emerald-950/35 border border-emerald-500/35 rounded-2xl px-4 py-3.5 flex-row items-center justify-between"
       >
         <View className="flex-row items-center flex-1 mr-3">
@@ -153,7 +160,9 @@ export const KaluriPromoCard: React.FC = () => {
           </Text>
         </View>
         <Pressable
-          onPress={() => Linking.openURL(KALURI_URL)}
+          onPress={() => {
+          void openSafeExternalUrl(KALURI_URL);
+        }}
           className="flex-row items-center px-2.5 py-1 rounded-full bg-[#27272A] active:opacity-80"
         >
           <Text className="text-[#22C55E] text-[11px] font-semibold mr-1">Abrir</Text>

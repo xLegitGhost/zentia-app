@@ -5,6 +5,7 @@ import {
   IDEMPOTENCY_HEADER,
   shouldAttachIdempotencyHeader,
 } from './idempotency';
+import { sanitizeApiBaseUrl } from './security';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -21,7 +22,10 @@ declare module 'axios' {
  * Sigue las directrices de DocBackend.pdf (UAQ)
  * Inyecta automáticamente el token JWT, timeout configurado y cabecera opcional Idempotency-Key.
  */
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL = sanitizeApiBaseUrl(
+  process.env.EXPO_PUBLIC_API_URL,
+  typeof __DEV__ !== 'undefined' && __DEV__
+);
 
 const configuredTimeout = Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS);
 export const API_TIMEOUT_MS =

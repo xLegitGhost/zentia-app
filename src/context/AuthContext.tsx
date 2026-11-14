@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, setUnauthorizedHandler } from '@/services/api';
 import { storage } from '@/services/storage';
+import { isJwtExpiredClientSide, logSafeWarning } from '@/services/security';
 import { financialProfileRepository } from '@/infrastructure/adapters/InMemoryFinancialProfileAdapter';
 import { AuthResponse, GoogleAuthRequest, UserResponse } from '@/types/api';
 
@@ -90,6 +91,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedUser = isValidStoredUser(rawStoredUser) ? rawStoredUser : null;
 
         if (storedToken) {
+          if (isJwtExpiredClientSide(storedToken)) {
+            await storage.clearSession();
+            await financialProfileRepository.clearProfile();
+            queryClient.clear();
+            return;
+          }
+
           setToken(storedToken);
           setUser(storedUser);
 
@@ -105,13 +113,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await storage.clearSession();
         }
       } catch (error) {
-        console.warn('Error al restaurar sesión:', error);
+        logSafeWarning('Error al restaurar sesión', error);
       } finally {
         setIsLoading(false);
       }
     };
     bootstrap();
-  }, [syncSessionWithBackend]);
+  }, [queryClient, syncSessionWithBackend]);
 
   const loginWithGoogle = async (payload: GoogleAuthRequest): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/google', payload);

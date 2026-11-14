@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, AppState, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Fingerprint, Lock } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 import { storage } from '@/services/storage';
 import { biometrics } from '@/services/biometrics';
 
 export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   const { isAuthenticated, isLoading, logout } = useAuth();
   const [locked, setLocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const appState = useRef(AppState.currentState);
   const promptInFlight = useRef(false);
+  const biometricsEnabledRef = useRef(false);
 
   const attemptUnlock = useCallback(async () => {
     if (Platform.OS === 'web' || promptInFlight.current) return;
@@ -30,6 +33,7 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
   // Evaluar bloqueo al iniciar sesión / montar autenticado
   useEffect(() => {
     if (Platform.OS === 'web' || isLoading || !isAuthenticated) {
+      biometricsEnabledRef.current = false;
       setLocked(false);
       return;
     }
@@ -37,6 +41,7 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
     let cancelled = false;
     (async () => {
       const enabled = await storage.getBiometricsEnabled();
+      biometricsEnabledRef.current = enabled;
       if (!cancelled && enabled) {
         setLocked(true);
         await attemptUnlock();
@@ -48,7 +53,7 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [isAuthenticated, isLoading, attemptUnlock]);
 
-  // Solicitar biometría al volver de segundo plano
+  // Ocultar información al pasar a segundo plano (protege captura en app switcher) y verificar al volver
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
@@ -56,12 +61,20 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
       const prevState = appState.current;
       appState.current = nextState;
 
+      if ((nextState === 'inactive' || nextState === 'background') && isAuthenticated) {
+        if (biometricsEnabledRef.current) {
+          setLocked(true);
+        }
+        return;
+      }
+
       if (
         (prevState === 'background' || prevState === 'inactive') &&
         nextState === 'active' &&
         isAuthenticated
       ) {
         const enabled = await storage.getBiometricsEnabled();
+        biometricsEnabledRef.current = enabled;
         if (enabled) {
           setLocked(true);
           await attemptUnlock();
@@ -74,10 +87,17 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <View className="flex-1 bg-black">
-      {children}
+      <View
+        className="flex-1"
+        pointerEvents={locked ? 'none' : 'auto'}
+        accessibilityElementsHidden={locked}
+        importantForAccessibility={locked ? 'no-hide-descendants' : 'auto'}
+      >
+        {children}
+      </View>
 
       {locked ? (
-        <View className="absolute inset-0 bg-black/95 items-center justify-center px-8 z-50">
+        <View className="absolute inset-0 bg-black items-center justify-center px-8 z-50">
           <View className="w-16 h-16 rounded-full bg-[#121214] border border-zinc-800 items-center justify-center mb-6">
             <Lock size={28} color="#22C55E" />
           </View>
@@ -107,6 +127,7 @@ export const BiometricLockGate: React.FC<{ children: React.ReactNode }> = ({ chi
             onPress={async () => {
               await logout();
               setLocked(false);
+              router.replace('/(auth)/login');
             }}
             className="py-2 px-4 active:opacity-70"
           >

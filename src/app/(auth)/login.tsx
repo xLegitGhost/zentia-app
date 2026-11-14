@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL } from '@/services/api';
+import { logSafeWarning } from '@/services/security';
 import { GoogleLogo } from '@/components/ui/GoogleLogo';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
@@ -47,7 +48,7 @@ export default function LoginScreen() {
 
         handleAuthSuccess(res);
       } catch (error: any) {
-        console.warn('Error procesando login con backend:', error);
+        logSafeWarning('Error procesando login con backend', error);
         const detail =
           error?.response?.data?.error ||
           error?.message ||
@@ -64,7 +65,7 @@ export default function LoginScreen() {
       }
     },
     onError: (errorResponse) => {
-      console.warn('Error en Google OAuth:', errorResponse);
+      logSafeWarning('Error en Google OAuth', errorResponse);
       const msg =
         errorResponse?.error_description ||
         errorResponse?.error ||
@@ -85,7 +86,7 @@ export default function LoginScreen() {
       try {
         triggerGoogleWebLogin();
       } catch (e: any) {
-        console.warn('Error al invocar Google Login:', e);
+        logSafeWarning('Error al invocar Google Login', e);
         setErrorMessage(
           e?.message || 'Error al invocar Google Login. Verifica EXPO_PUBLIC_GOOGLE_CLIENT_ID en .env.'
         );
