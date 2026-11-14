@@ -1,15 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
+import { buildAuthCacheScope, cacheStorage } from '@/services/cacheStorage';
 import { FinancialProfile } from '@/domain/models/FinancialProfile';
 import { financialProfileRepository } from '@/infrastructure/adapters/InMemoryFinancialProfileAdapter';
 import { httpFinancialProfileRepository } from '@/infrastructure/adapters/HttpFinancialProfileAdapter';
 
+const PROFILE_CACHE_TTL_MS = 1000 * 60 * 15; // 15 min
+
 export function useFinancialProfile() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const cacheScope = buildAuthCacheScope(isAuthenticated, user?.id);
+  const profileCacheKey = `profile:${cacheScope}`;
+  const cachedProfile = cacheStorage.get<FinancialProfile>(
+    profileCacheKey,
+    PROFILE_CACHE_TTL_MS
+  );
 
   const profileQuery = useQuery({
-    queryKey: ['financialProfile', isAuthenticated],
+    queryKey: ['financialProfile', cacheScope],
+    initialData: cachedProfile?.data,
+    initialDataUpdatedAt: cachedProfile?.cachedAt,
+    staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       if (isAuthenticated) {
         const remote = await httpFinancialProfileRepository.getProfile();
@@ -20,12 +32,16 @@ export function useFinancialProfile() {
             estimatedMonthlyExpense: remote.estimatedMonthlyExpense,
             priorityCategoryId: remote.priorityCategoryId,
           });
+          cacheStorage.set(profileCacheKey, remote);
           return remote;
         }
       }
-      return financialProfileRepository.getProfile();
+      const local = await financialProfileRepository.getProfile();
+      if (local) {
+        cacheStorage.set(profileCacheKey, local);
+      }
+      return local;
     },
-    staleTime: 1000 * 60 * 5,
   });
 
   const saveMutation = useMutation({
@@ -37,7 +53,8 @@ export function useFinancialProfile() {
       return localProfile;
     },
     onSuccess: (newProfile) => {
-      queryClient.setQueryData(['financialProfile', isAuthenticated], newProfile);
+      cacheStorage.set(profileCacheKey, newProfile);
+      queryClient.setQueryData(['financialProfile', cacheScope], newProfile);
       queryClient.invalidateQueries({ queryKey: ['financialProfile'] });
     },
   });

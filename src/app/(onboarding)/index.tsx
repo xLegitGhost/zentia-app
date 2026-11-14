@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -28,14 +28,34 @@ const GOALS = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { completeOnboarding } = useAuth();
-  const { saveProfile, isSaving } = useFinancialProfile();
+  const { profile, saveProfile, isSaving } = useFinancialProfile();
   const { categories: expenseCategories } = useCategories('EXPENSE');
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [income, setIncome] = useState('25000');
-  const [selectedCategory, setSelectedCategory] = useState<number>(1);
+  const [income, setIncome] = useState(() =>
+    profile?.monthlyIncome ? String(profile.monthlyIncome) : '25000'
+  );
+  const [selectedCategory, setSelectedCategory] = useState<number>(
+    () => (profile?.priorityCategoryId ? Number(profile.priorityCategoryId) || 1 : 1)
+  );
   const [selectedGoal, setSelectedGoal] = useState(GOALS[0]);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const hydratedProfile = useRef(Boolean(profile));
+
+  useEffect(() => {
+    if (!hydratedProfile.current && profile) {
+      hydratedProfile.current = true;
+      if (profile.monthlyIncome > 0) {
+        setIncome(String(profile.monthlyIncome));
+      }
+      if (profile.priorityCategoryId) {
+        const parsedId = Number(profile.priorityCategoryId);
+        if (Number.isFinite(parsedId) && parsedId > 0) {
+          setSelectedCategory(parsedId);
+        }
+      }
+    }
+  }, [profile]);
 
   const handleNext = () => {
     if (step < 3) {

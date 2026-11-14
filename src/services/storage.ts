@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { cacheStorage } from '@/services/cacheStorage';
 
 const JWT_KEY = 'zentia_jwt_token';
 const USER_KEY = 'zentia_user_data';
@@ -160,6 +161,7 @@ export const storage = {
   },
 
   async clearSession(): Promise<void> {
+    cacheStorage.clearUserCaches();
     await this.removeToken();
     await this.removeFinancialProfile();
     if (Platform.OS === 'web') {

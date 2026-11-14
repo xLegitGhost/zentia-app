@@ -2,12 +2,14 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { ArrowUpRight, TrendingUp } from 'lucide-react-native';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { TransactionListSkeleton } from '@/components/ui/Skeleton';
 import { CategoryResponse, TransactionResponse } from '@/types/api';
 import { formatCurrency } from '@/utils/currency';
 
 interface RecentTransactionsProps {
   transactions: TransactionResponse[];
   categories: CategoryResponse[];
+  isLoading?: boolean;
   onViewAll: () => void;
   onAddFirst: () => void;
 }
@@ -15,6 +17,7 @@ interface RecentTransactionsProps {
 export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   transactions,
   categories,
+  isLoading = false,
   onViewAll,
   onAddFirst,
 }) => {
@@ -47,7 +50,9 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </Pressable>
       </View>
 
-      {recent.length === 0 ? (
+      {isLoading && recent.length === 0 ? (
+        <TransactionListSkeleton count={4} variant="grouped" />
+      ) : recent.length === 0 ? (
         <Pressable
           onPress={onAddFirst}
           className="bg-[#121214] border border-zinc-900 rounded-2xl p-6 items-center justify-center active:opacity-80"

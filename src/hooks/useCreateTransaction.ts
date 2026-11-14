@@ -1,48 +1,107 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import { TransactionRequest, TransactionResponse } from '@/types/api';
+import { useAuth } from '@/context/AuthContext';
+import { buildAuthCacheScope } from '@/services/cacheStorage';
+import {
+  captureTransactionSnapshot,
+  getTransactionDate,
+  isDateInRange,
+  restoreTransactionSnapshot,
+  syncMutationAcrossPeriodCaches,
+} from '@/services/transactionCache';
+import { CategoryResponse, TransactionRequest, TransactionResponse } from '@/types/api';
 import { DEFAULT_CATEGORIES } from './useCategories';
 
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
+  const { isAuthenticated, user } = useAuth();
+  const cacheScope = buildAuthCacheScope(isAuthenticated, user?.id);
 
   return useMutation({
-    mutationFn: async (payload: TransactionRequest): Promise<TransactionResponse> => {
-      // Normalizar tipo para backend Spring Boot (admite GASTO/INGRESO y EXPENSE/INCOME)
-      const normalizedPayload = {
-        ...payload,
-        type: payload.type === 'INCOME' ? 'INGRESO' : payload.type === 'EXPENSE' ? 'GASTO' : payload.type,
+    mutationFn: async (
+      payload: TransactionRequest & { _tempId?: number }
+    ): Promise<TransactionResponse> => {
+      const normalizedType =
+        payload.type === 'INCOME' ? 'INGRESO' : payload.type === 'EXPENSE' ? 'GASTO' : payload.type;
+
+      if (isAuthenticated) {
+        const response = await api.post<TransactionResponse>('/transactions', {
+          amount: payload.amount,
+          type: normalizedType,
+          categoryId: payload.categoryId,
+          description: payload.description,
+          transactionDate: payload.transactionDate,
+        });
+        return response.data;
+      }
+
+      const categories =
+        queryClient.getQueryData<CategoryResponse[]>(['categories']) ?? DEFAULT_CATEGORIES;
+      const matchedCategory = categories.find((c) => c.id === payload.categoryId);
+      const txDate = payload.transactionDate || new Date().toISOString().split('T')[0];
+
+      return {
+        id: payload._tempId ?? Date.now(),
+        amount: payload.amount,
+        type: normalizedType,
+        category: matchedCategory,
+        categoryName: matchedCategory?.name || '',
+        description: payload.description,
+        date: txDate,
+        transactionDate: txDate,
+        createdAt: new Date().toISOString(),
+      };
+    },
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] });
+      await queryClient.cancelQueries({ queryKey: ['dashboard'] });
+
+      const snapshot = captureTransactionSnapshot(queryClient, cacheScope);
+      const tempId = -Date.now();
+      const categories =
+        queryClient.getQueryData<CategoryResponse[]>(['categories']) ?? DEFAULT_CATEGORIES;
+      const matchedCategory = categories.find((c) => c.id === payload.categoryId);
+      const normalizedType =
+        payload.type === 'INCOME' ? 'INGRESO' : payload.type === 'EXPENSE' ? 'GASTO' : payload.type;
+      const txDate = payload.transactionDate || new Date().toISOString().split('T')[0];
+
+      const optimisticTx: TransactionResponse = {
+        id: tempId,
+        amount: payload.amount,
+        type: normalizedType,
+        category: matchedCategory,
+        categoryName: matchedCategory?.name || '',
+        description: payload.description,
+        date: txDate,
+        transactionDate: txDate,
+        createdAt: new Date().toISOString(),
       };
 
-      try {
-        const response = await api.post<TransactionResponse>('/transactions', normalizedPayload);
-        return response.data;
-      } catch (error) {
-        console.warn('Backend call failed, creating optimistic transaction for demo mode:', error);
-        // Fallback optimista para modo demo / stand offline
-        const matchedCategory = DEFAULT_CATEGORIES.find((c) => c.id === payload.categoryId);
-        const fallbackResponse: TransactionResponse = {
-          id: Date.now(),
-          amount: payload.amount,
-          type: payload.type,
-          category: matchedCategory,
-          categoryName: matchedCategory?.name || '',
-          description: payload.description,
-          transactionDate: payload.transactionDate || new Date().toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
-        };
-        return fallbackResponse;
-      }
-    },
-    onSuccess: (newTx) => {
-      // Invalidar consultas de historial y dashboard
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-
-      // Actualizar caché de historial optimísticamente
-      queryClient.setQueryData<TransactionResponse[]>(['transactions'], (old) => {
-        return old ? [newTx, ...old] : [newTx];
+      syncMutationAcrossPeriodCaches(queryClient, cacheScope, (list, startDate, endDate) => {
+        if (!isDateInRange(txDate, startDate, endDate)) return list;
+        return [optimisticTx, ...list.filter((t) => t.id !== tempId)];
       });
+
+      return { snapshot, tempId };
+    },
+    onError: (_err, _payload, context) => {
+      restoreTransactionSnapshot(queryClient, cacheScope, context?.snapshot);
+    },
+    onSuccess: (newTx, _payload, context) => {
+      const txDate = getTransactionDate(newTx);
+      syncMutationAcrossPeriodCaches(queryClient, cacheScope, (list, startDate, endDate) => {
+        const withoutTemp = list.filter(
+          (t) => t.id !== context?.tempId && t.id !== newTx.id
+        );
+        if (!isDateInRange(txDate, startDate, endDate)) return withoutTemp;
+        return [newTx, ...withoutTemp];
+      });
+    },
+    onSettled: () => {
+      if (isAuthenticated) {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }
     },
   });
 }

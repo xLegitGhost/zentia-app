@@ -1,11 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { TransactionResponse } from '@/types/api';
+import { buildAuthCacheScope } from '@/services/cacheStorage';
+import {
+  captureTransactionSnapshot,
+  restoreTransactionSnapshot,
+  syncMutationAcrossPeriodCaches,
+} from '@/services/transactionCache';
 
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const cacheScope = buildAuthCacheScope(isAuthenticated, user?.id);
 
   return useMutation({
     mutationFn: async (transactionId: number): Promise<number> => {
@@ -14,13 +20,25 @@ export function useDeleteTransaction() {
       }
       return transactionId;
     },
-    onSuccess: (deletedId) => {
-      queryClient.setQueriesData<TransactionResponse[]>(
-        { queryKey: ['transactions'] },
-        (old) => (old ? old.filter((tx) => tx.id !== deletedId) : old)
+    onMutate: async (transactionId) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] });
+      await queryClient.cancelQueries({ queryKey: ['dashboard'] });
+
+      const snapshot = captureTransactionSnapshot(queryClient, cacheScope);
+      syncMutationAcrossPeriodCaches(queryClient, cacheScope, (list) =>
+        list.filter((tx) => tx.id !== transactionId)
       );
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
+      return { snapshot };
+    },
+    onError: (_err, _id, context) => {
+      restoreTransactionSnapshot(queryClient, cacheScope, context?.snapshot);
+    },
+    onSettled: () => {
+      if (isAuthenticated) {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }
     },
   });
 }

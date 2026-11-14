@@ -1,10 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { cacheStorage } from '@/services/cacheStorage';
 import { CategoryResponse, TransactionType } from '@/types/api';
+
+const CATEGORIES_CACHE_KEY = 'categories';
+const CATEGORIES_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 horas
 
 /**
  * Catálogo por defecto alineado 1:1 con los IDs reales del backend Spring Boot.
- * Se usa únicamente como placeholder antes de recibir GET /api/v1/categories o en modo offline.
+ * Se usa únicamente como fallback antes de recibir GET /api/v1/categories o en modo offline.
  */
 export const DEFAULT_CATEGORIES: CategoryResponse[] = [
   { id: 1, name: 'Comida y Despensa', icon: 'shopping-cart', type: 'GASTO' },
@@ -23,21 +27,29 @@ export const DEFAULT_CATEGORIES: CategoryResponse[] = [
 ];
 
 export function useCategories(typeFilter?: TransactionType) {
+  const cachedCategories = cacheStorage.get<CategoryResponse[]>(
+    CATEGORIES_CACHE_KEY,
+    CATEGORIES_CACHE_TTL_MS
+  );
+
   const query = useQuery({
     queryKey: ['categories'],
+    initialData: cachedCategories?.data,
+    initialDataUpdatedAt: cachedCategories?.cachedAt,
     queryFn: async () => {
       try {
         const response = await api.get<CategoryResponse[]>('/categories');
         if (response.data && response.data.length > 0) {
+          cacheStorage.set(CATEGORIES_CACHE_KEY, response.data);
           return response.data;
         }
       } catch {
-        console.warn('Backend categories unavailable, using default catalog.');
+        console.warn('Backend categories unavailable, using cached/default catalog.');
       }
-      return DEFAULT_CATEGORIES;
+      return cachedCategories?.data ?? DEFAULT_CATEGORIES;
     },
     placeholderData: DEFAULT_CATEGORIES,
-    staleTime: 1000 * 60 * 15, // 15 min
+    staleTime: 1000 * 60 * 30, // 30 min
   });
 
   const allCategories = query.data || DEFAULT_CATEGORIES;

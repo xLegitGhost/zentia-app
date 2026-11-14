@@ -1,7 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { TransactionResponse, UpdateTransactionRequest } from '@/types/api';
+import { buildAuthCacheScope } from '@/services/cacheStorage';
+import {
+  captureTransactionSnapshot,
+  restoreTransactionSnapshot,
+  syncMutationAcrossPeriodCaches,
+} from '@/services/transactionCache';
+import { CategoryResponse, TransactionResponse, UpdateTransactionRequest } from '@/types/api';
 import { DEFAULT_CATEGORIES } from './useCategories';
 
 export interface UpdateTransactionVariables {
@@ -11,7 +17,8 @@ export interface UpdateTransactionVariables {
 
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const cacheScope = buildAuthCacheScope(isAuthenticated, user?.id);
 
   return useMutation({
     mutationFn: async ({
@@ -26,12 +33,18 @@ export function useUpdateTransaction() {
         return response.data;
       }
 
-      // Modo demo local en memoria
       const categories =
-        queryClient.getQueryData<typeof DEFAULT_CATEGORIES>(['categories']) ?? DEFAULT_CATEGORIES;
+        queryClient.getQueryData<CategoryResponse[]>(['categories']) ?? DEFAULT_CATEGORIES;
       const matchedCategory = categories.find((c) => c.id === payload.categoryId);
-      const cached = queryClient.getQueryData<TransactionResponse[]>(['transactions']) ?? [];
-      const existing = cached.find((t) => t.id === transactionId);
+
+      const allCached = queryClient.getQueriesData<TransactionResponse[]>({
+        queryKey: ['transactions'],
+      });
+      let existing: TransactionResponse | undefined;
+      for (const [, list] of allCached) {
+        existing = list?.find((t) => t.id === transactionId);
+        if (existing) break;
+      }
 
       return {
         id: transactionId,
@@ -44,16 +57,44 @@ export function useUpdateTransaction() {
         transactionDate: existing?.transactionDate ?? existing?.date,
       };
     },
-    onSuccess: (updatedTx) => {
-      queryClient.setQueriesData<TransactionResponse[]>(
-        { queryKey: ['transactions'] },
-        (old) => {
-          if (!old) return old;
-          return old.map((tx) => (tx.id === updatedTx.id ? { ...tx, ...updatedTx } : tx));
-        }
+    onMutate: async ({ transactionId, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] });
+      await queryClient.cancelQueries({ queryKey: ['dashboard'] });
+
+      const snapshot = captureTransactionSnapshot(queryClient, cacheScope);
+      const categories =
+        queryClient.getQueryData<CategoryResponse[]>(['categories']) ?? DEFAULT_CATEGORIES;
+      const matchedCategory = categories.find((c) => c.id === payload.categoryId);
+
+      syncMutationAcrossPeriodCaches(queryClient, cacheScope, (list) =>
+        list.map((tx) =>
+          tx.id === transactionId
+            ? {
+                ...tx,
+                amount: payload.amount,
+                description: payload.description ?? tx.description,
+                category: matchedCategory ?? tx.category,
+                categoryName: matchedCategory?.name ?? tx.categoryName,
+              }
+            : tx
+        )
       );
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
+      return { snapshot };
+    },
+    onError: (_err, _vars, context) => {
+      restoreTransactionSnapshot(queryClient, cacheScope, context?.snapshot);
+    },
+    onSuccess: (updatedTx) => {
+      syncMutationAcrossPeriodCaches(queryClient, cacheScope, (list) =>
+        list.map((tx) => (tx.id === updatedTx.id ? { ...tx, ...updatedTx } : tx))
+      );
+    },
+    onSettled: () => {
+      if (isAuthenticated) {
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }
     },
   });
 }

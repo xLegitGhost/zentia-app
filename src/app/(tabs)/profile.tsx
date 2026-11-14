@@ -12,12 +12,13 @@ import { StandQRCard } from '@/components/ui/StandQRCard';
 import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import { SkeletonBox } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/utils/currency';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
-  const { profile } = useFinancialProfile();
+  const { profile, isLoading: isProfileLoading } = useFinancialProfile();
 
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [capability, setCapability] = useState<BiometricsCapability>({
@@ -137,23 +138,31 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          <View className="flex-row justify-between py-2 border-b border-zinc-800/70">
+          <View className="flex-row justify-between items-center py-2 border-b border-zinc-800/70">
             <Text className="text-zinc-400 text-xs">Ingreso Mensual Base</Text>
-            <Text
-              className="text-white text-xs font-bold"
-              style={{ fontVariant: ['tabular-nums'] }}
-            >
-              {formatCurrency(profile?.monthlyIncome ?? 25000)}
-            </Text>
+            {isProfileLoading && !profile ? (
+              <SkeletonBox className="w-20 h-3.5 rounded-full" />
+            ) : (
+              <Text
+                className="text-white text-xs font-bold"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                {formatCurrency(profile?.monthlyIncome ?? 25000)}
+              </Text>
+            )}
           </View>
-          <View className="flex-row justify-between pt-3">
+          <View className="flex-row justify-between items-center pt-3">
             <Text className="text-zinc-400 text-xs">Meta de Ahorro Mensual</Text>
-            <Text
-              className="text-[#22C55E] text-xs font-bold"
-              style={{ fontVariant: ['tabular-nums'] }}
-            >
-              {formatCurrency(profile?.monthlySavingsGoal ?? 5000)}
-            </Text>
+            {isProfileLoading && !profile ? (
+              <SkeletonBox className="w-20 h-3.5 rounded-full" />
+            ) : (
+              <Text
+                className="text-[#22C55E] text-xs font-bold"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                {formatCurrency(profile?.monthlySavingsGoal ?? 5000)}
+              </Text>
+            )}
           </View>
         </View>
 

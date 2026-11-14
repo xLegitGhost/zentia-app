@@ -18,6 +18,10 @@ import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { GuidedTutorialCard } from '@/components/dashboard/GuidedTutorialCard';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import {
+  BalanceCardSkeleton,
+  SavingsGoalSkeleton,
+} from '@/components/ui/Skeleton';
 import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { formatCurrency } from '@/utils/currency';
 
@@ -29,7 +33,7 @@ const PERIOD_LABELS: Record<PeriodKey, string> = {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { profile } = useFinancialProfile();
+  const { profile, isLoading: isProfileLoading } = useFinancialProfile();
   const { allCategories } = useCategories();
 
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>('current_month');
@@ -51,10 +55,15 @@ export default function DashboardScreen() {
     [selectedPeriod, customRange]
   );
 
-  const { summary, transactions, isLoading, isFetching, refetch } = useDashboardSummary(
-    activeRange.startDate,
-    activeRange.endDate
-  );
+  const {
+    summary,
+    transactions,
+    isLoading,
+    isFetching,
+    hasSummaryData,
+    hasHistoryData,
+    refetch,
+  } = useDashboardSummary(activeRange.startDate, activeRange.endDate);
 
   const savingsGoal = profile?.monthlySavingsGoal || 5000;
   const effectiveSavingsBase =
@@ -162,63 +171,72 @@ export default function DashboardScreen() {
         />
 
         {/* Balance Card (TASK-302) */}
-        <FadeSlideIn delay={40}>
-          <BalanceCard
-            balanceActual={summary.balanceActual}
-            totalIngresos={summary.totalIngresos}
-            totalGastos={summary.totalGastos}
-            isFetching={isFetching}
-            periodLabel={periodSubtitle}
-          />
-        </FadeSlideIn>
+        {!hasSummaryData && isLoading ? (
+          <BalanceCardSkeleton />
+        ) : (
+          <FadeSlideIn delay={40}>
+            <BalanceCard
+              balanceActual={summary.balanceActual}
+              totalIngresos={summary.totalIngresos}
+              totalGastos={summary.totalGastos}
+              isFetching={isFetching}
+              periodLabel={periodSubtitle}
+            />
+          </FadeSlideIn>
+        )}
 
         {/* Savings Goal Card (Hexagonal In-Memory Feature) */}
-        <FadeSlideIn delay={90}>
-          <View className="bg-[#18181B] border border-zinc-800/80 rounded-2xl p-5 mb-6">
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <Target size={18} color="#22C55E" />
-                <Text className="text-white text-sm font-semibold ml-2">
-                  Meta de Ahorro Mensual
+        {!profile && isProfileLoading ? (
+          <SavingsGoalSkeleton />
+        ) : (
+          <FadeSlideIn delay={90}>
+            <View className="bg-[#18181B] border border-zinc-800/80 rounded-2xl p-5 mb-6">
+              <View className="flex-row items-center justify-between mb-2">
+                <View className="flex-row items-center">
+                  <Target size={18} color="#22C55E" />
+                  <Text className="text-white text-sm font-semibold ml-2">
+                    Meta de Ahorro Mensual
+                  </Text>
+                </View>
+                <Text
+                  className="text-[#22C55E] text-xs font-bold"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  {savingsProgressPercent}%
                 </Text>
               </View>
-              <Text
-                className="text-[#22C55E] text-xs font-bold"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                {savingsProgressPercent}%
-              </Text>
-            </View>
 
-            <View className="h-2 bg-[#27272A] rounded-full overflow-hidden my-2">
-              <View
-                style={{ width: `${savingsProgressPercent}%` }}
-                className="h-full bg-[#22C55E] rounded-full"
-              />
-            </View>
+              <View className="h-2 bg-[#27272A] rounded-full overflow-hidden my-2">
+                <View
+                  style={{ width: `${savingsProgressPercent}%` }}
+                  className="h-full bg-[#22C55E] rounded-full"
+                />
+              </View>
 
-            <View className="flex-row justify-between items-center mt-1">
-              <Text
-                className="text-zinc-400 text-xs"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                Objetivo: {formatCurrency(savingsGoal)}
-              </Text>
-              <Text
-                className="text-zinc-500 text-[11px]"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                Base actual: {formatCurrency(effectiveSavingsBase)}
-              </Text>
+              <View className="flex-row justify-between items-center mt-1">
+                <Text
+                  className="text-zinc-400 text-xs"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  Objetivo: {formatCurrency(savingsGoal)}
+                </Text>
+                <Text
+                  className="text-zinc-500 text-[11px]"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  Base actual: {formatCurrency(effectiveSavingsBase)}
+                </Text>
+              </View>
             </View>
-          </View>
-        </FadeSlideIn>
+          </FadeSlideIn>
+        )}
 
         {/* Recent Transactions Preview (TASK-304) */}
         <FadeSlideIn delay={140}>
           <RecentTransactions
             transactions={transactions}
             categories={allCategories}
+            isLoading={!hasHistoryData && isLoading}
             onViewAll={() => router.push('/(tabs)/transactions')}
             onAddFirst={() => router.push('/(modal)/new-transaction')}
           />

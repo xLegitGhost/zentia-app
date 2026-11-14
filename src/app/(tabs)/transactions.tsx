@@ -23,6 +23,7 @@ import { useDeleteTransaction } from '@/hooks/useDeleteTransaction';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import { TransactionListSkeleton } from '@/components/ui/Skeleton';
 import { TransactionResponse } from '@/types/api';
 import { formatCurrency } from '@/utils/currency';
 
@@ -52,7 +53,7 @@ export default function TransactionsScreen() {
     [selectedPeriod, customRange]
   );
 
-  const { transactions, isFetching, refetch } = useDashboardSummary(
+  const { transactions, isLoading, isFetching, hasHistoryData, refetch } = useDashboardSummary(
     activeRange.startDate,
     activeRange.endDate
   );
@@ -214,15 +215,19 @@ export default function TransactionsScreen() {
           />
         }
         ListEmptyComponent={
-          <View className="bg-[#121214] border border-zinc-800 rounded-2xl p-6 items-center justify-center mt-2">
-            <TrendingUp size={28} color="#71717A" />
-            <Text className="text-zinc-300 text-sm font-medium mt-3 mb-1">
-              Sin movimientos para mostrar
-            </Text>
-            <Text className="text-zinc-500 text-xs text-center max-w-[240px]">
-              Ajusta los filtros o registra un nuevo ingreso o gasto con el botón +.
-            </Text>
-          </View>
+          isLoading && !hasHistoryData ? (
+            <TransactionListSkeleton count={5} variant="cards" />
+          ) : (
+            <View className="bg-[#121214] border border-zinc-800 rounded-2xl p-6 items-center justify-center mt-2">
+              <TrendingUp size={28} color="#71717A" />
+              <Text className="text-zinc-300 text-sm font-medium mt-3 mb-1">
+                Sin movimientos para mostrar
+              </Text>
+              <Text className="text-zinc-500 text-xs text-center max-w-[240px]">
+                Ajusta los filtros o registra un nuevo ingreso o gasto con el botón +.
+              </Text>
+            </View>
+          )
         }
         renderSectionHeader={({ section }) => (
           <View className="flex-row items-center justify-between pt-3 pb-2">

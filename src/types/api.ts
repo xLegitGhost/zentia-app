@@ -80,3 +80,10 @@ export interface DashboardSummaryResponse {
   periodStart?: string;
   periodEnd?: string;
 }
+
+export interface NormalizedDashboardSummary {
+  totalIngresos: number;
+  totalGastos: number;
+  balanceActual: number;
+  isDemoData: boolean;
+}
