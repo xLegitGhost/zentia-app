@@ -8,8 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { storage } from '@/services/storage';
 import { biometrics, BiometricsCapability } from '@/services/biometrics';
-import { StandQRCard } from '@/components/ui/StandQRCard';
-import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
+import { KaluriPromoCard } from '@/components/ui/KaluriEasterEgg';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { SkeletonBox } from '@/components/ui/Skeleton';
@@ -195,14 +194,9 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
-        {/* App Hermana Kaluri.app */}
+        {/* Promo App Hermana Kaluri.app con código URIEL15 */}
         <FadeSlideIn delay={60}>
-          <KaluriSplashBanner variant="card" seed={2} />
-        </FadeSlideIn>
-
-        {/* QR Demo Stand (TASK-503) */}
-        <FadeSlideIn delay={100}>
-          <StandQRCard />
+          <KaluriPromoCard />
         </FadeSlideIn>
 
         {/* Logout */}

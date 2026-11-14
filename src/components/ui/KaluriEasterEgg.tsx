@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
-import { ExternalLink, Sparkles } from 'lucide-react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Check, Copy, ExternalLink, Sparkles, Tag } from 'lucide-react-native';
 
 export const KALURI_URL = 'https://kaluri.app';
+export const KALURI_PROMO_CODE = 'URIEL15';
 
 const SPLASH_MESSAGES = [
   'Also try Kaluri.app — IA para tus calorías',
@@ -92,5 +93,99 @@ export const KaluriFoodHint: React.FC<KaluriFoodHintProps> = ({
         Also try <Text className="text-amber-300/90 font-medium">Kaluri.app</Text> — macros con una foto
       </Text>
     </Pressable>
+  );
+};
+
+/**
+ * Tarjeta promocional de la app hermana Kaluri.app para la pantalla de Perfil con código URIEL15.
+ */
+export const KaluriPromoCard: React.FC = () => {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleCopyCode = async () => {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(KALURI_PROMO_CODE);
+      } catch {
+        // Ignorar si el navegador restringe portapapeles
+      }
+    }
+    setCopied(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <View className="bg-[#121214] border border-zinc-800 rounded-3xl p-5 mb-6">
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center">
+          <View className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/30 items-center justify-center mr-2">
+            <Sparkles size={14} color="#FBBF24" />
+          </View>
+          <Text className="text-amber-300 text-[11px] font-bold uppercase tracking-wider">
+            App Hermana • Kaluri.app
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => Linking.openURL(KALURI_URL)}
+          className="flex-row items-center px-2.5 py-1 rounded-full bg-[#27272A] active:opacity-80"
+        >
+          <Text className="text-[#22C55E] text-[11px] font-semibold mr-1">Abrir</Text>
+          <ExternalLink size={11} color="#22C55E" />
+        </Pressable>
+      </View>
+
+      <Text className="text-white text-base font-bold mb-1">
+        Also try Kaluri.app
+      </Text>
+      <Text className="text-zinc-400 text-xs leading-relaxed mb-4">
+        Así como cuidas tus finanzas en Zentia, lleva tus calorías y macros con IA desde una foto de tu comida.
+      </Text>
+
+      <Pressable
+        onPress={handleCopyCode}
+        className="bg-[#18181B] border border-dashed border-amber-500/40 rounded-2xl px-4 py-3 flex-row items-center justify-between active:opacity-80"
+      >
+        <View className="flex-row items-center">
+          <Tag size={15} color="#FBBF24" />
+          <View className="ml-2.5">
+            <Text className="text-zinc-500 text-[10px] uppercase tracking-wider font-semibold">
+              Código de descuento
+            </Text>
+            <Text
+              selectable
+              className="text-white text-sm font-extrabold tracking-widest mt-0.5"
+            >
+              {KALURI_PROMO_CODE}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          className={`flex-row items-center px-3 py-1.5 rounded-full ${
+            copied ? 'bg-emerald-950/80 border border-emerald-700' : 'bg-[#27272A]'
+          }`}
+        >
+          {copied ? (
+            <>
+              <Check size={12} color="#22C55E" />
+              <Text className="text-[#22C55E] text-[11px] font-bold ml-1">Copiado</Text>
+            </>
+          ) : (
+            <>
+              <Copy size={12} color="#E4E4E7" />
+              <Text className="text-zinc-200 text-[11px] font-semibold ml-1">Copiar</Text>
+            </>
+          )}
+        </View>
+      </Pressable>
+    </View>
   );
 };
