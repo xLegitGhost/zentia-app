@@ -10,10 +10,11 @@
 2. [Stack Tecnológico](#stack-tecnológico)
 3. [Arquitectura Frontend](#arquitectura-frontend)
 4. [Estrategia de Caché, Optimistic UI y Skeletons](#estrategia-de-caché-optimistic-ui-y-skeletons)
-5. [Integración con Backend (REST + JWT)](#integración-con-backend-rest--jwt)
-6. [Trade-offs de Diseño y Decisiones Técnicas](#trade-offs-de-diseño-y-decisiones-técnicas)
-7. [Estructura del Proyecto](#estructura-del-proyecto)
-8. [Configuración, Comandos y Despliegue](#configuración-comandos-y-despliegue)
+5. [Idempotencia, Reintentos y Resiliencia de Red](#idempotencia-reintentos-y-resiliencia-de-red)
+6. [Integración con Backend (REST + JWT)](#integración-con-backend-rest--jwt)
+7. [Trade-offs de Diseño y Decisiones Técnicas](#trade-offs-de-diseño-y-decisiones-técnicas)
+8. [Estructura del Proyecto](#estructura-del-proyecto)
+9. [Configuración, Comandos y Despliegue](#configuración-comandos-y-despliegue)
 
 ---
 
@@ -105,6 +106,43 @@ Alta, edición y eliminación (`useCreateTransaction`, `useUpdateTransaction`, `
 
 ---
 
+## Idempotencia, Reintentos y Resiliencia de Red
+
+De acuerdo con las reglas **RN-20**, **RN-25**, **CU-04** y **CU-10**, la idempotencia real y definitiva debe imponerse en el servidor (persistencia transaccional de clave única en Spring Boot + PostgreSQL). Como el cliente no sustituye esa garantía entre sesiones o dispositivos, el frontend implementa la capa completa de preparación de contrato y protección operativa en [`src/services/idempotency.ts`](src/services/idempotency.ts) y [`src/hooks/useIdempotencyKey.ts`](src/hooks/useIdempotencyKey.ts):
+
+```mermaid
+flowchart LR
+    FORM["Formulario / Acción UI + refs anti-doble-tap"] -->|"UUID v4 por intentFingerprint"| RUN["runIdempotentOperation"]
+    RUN -->|"1. Clave ya completada (TTL 10m)"| CACHED["Retorna respuesta cacheada sin POST"]
+    RUN -->|"2. Misma clave en vuelo"| COALESCE["Coalesce al mismo Promise"]
+    RUN -->|"3. Offline en Web"| ABORT["Bloquea envío y conserva clave para reintento"]
+    RUN -->|"4. Red / Timeout (15s)"| POLICY{"Método HTTP"}
+    POLICY -->|"GET / PUT / DELETE"| RETRY["Backoff exponencial + jitter (hasta 2 reintentos)"]
+    POLICY -->|"POST"| MANUAL["Sin auto-retry salvo flag backend; error CU-10 + misma clave"]
+```
+
+### Mecanismos implementados
+
+1. **Clave de idempotencia ligada a la intención (`useIdempotencyKey`):**
+   - Cada formulario de transacción (`new-transaction`, `edit-transaction`) y onboarding genera una clave UUID v4 estable a partir de `buildIntentFingerprint(...)`.
+   - Si una petición falla por timeout o caída de red, la clave **no cambia**: al presionar *Reintentar*, el cliente reutiliza exactamente la misma clave (`CU-10`). Si el usuario modifica monto, categoría o descripción, se emite automáticamente una nueva clave.
+2. **Bloqueo Single-Flight y Ledger de claves completadas:**
+   - **UI (`submittingRef` / `submittedRef` / `deletingIdRef`):** bloquea síncronamente doble-tap o clics residuales durante la transición de cierre modal antes del re-render de React.
+   - **En vuelo (`inFlightOperations`):** peticiones concurrentes con la misma `(scope, operation, idempotencyKey)` comparten la misma `Promise` en lugar de abrir una segunda petición HTTP.
+   - **Completadas (`cacheStorage`):** las respuestas exitosas se indexan temporalmente (`10 min` en altas/ediciones, `30 s` en borrados) y se purgan en logout / `401`.
+3. **Clasificación semántica de fallos (`classifyMutationError`) y detección offline (`RN-25`):**
+   - Timeout configurado a `15000 ms` (`EXPO_PUBLIC_API_TIMEOUT_MS`) para evitar sockets colgados sin abortar prematuramente respuestas lentas.
+   - En Web, si `!navigator.onLine`, las mutaciones autenticadas abortan antes de disparar Axios y omiten la inserción optimista para no mostrar registros reales no validados (`RN-25`).
+   - Diferencia errores de red, timeouts (*"Servicio lento — Render puede estar iniciando"*), conflictos `409`, `5xx` y errores de validación `400`/`422`.
+4. **Contrato HTTP preparado (`Idempotency-Key`) y compatibilidad CORS:**
+   - Todos los endpoints de mutación reciben `idempotencyKey` en la configuración de Axios (`src/services/api.ts`).
+   - En **nativo** (`iOS`/`Android`), el interceptor adjunta el header `Idempotency-Key` automáticamente.
+   - En **Web**, la verificación directa contra Render (`OPTIONS /api/v1/transactions`) devolvió `Access-Control-Allow-Headers: authorization, content-type`. Para no romper preflights CORS en navegador mientras el backend no lo incluya, el envío del header en Web permanece detrás de `EXPO_PUBLIC_ENABLE_IDEMPOTENCY_HEADER=true`.
+
+> **Integración futura en Spring Boot:** basta agregar `"Idempotency-Key"` a `allowedHeaders` en la configuración CORS de Spring Security, activar `EXPO_PUBLIC_ENABLE_IDEMPOTENCY_HEADER=true` y `EXPO_PUBLIC_BACKEND_IDEMPOTENT=true` en el frontend, y validar la llave en backend (por ejemplo vía `OncePerRequestFilter` + tabla/índice único `(user_id, idempotency_key)`).
+
+---
+
 ## Integración con Backend (REST + JWT)
 
 El frontend consume una API REST en Spring Boot (`EXPO_PUBLIC_API_URL`, por defecto `https://zentia-backend-5l77.onrender.com/api/v1`) con autenticación stateless mediante header `Authorization: Bearer <TOKEN_JWT>`.
@@ -134,6 +172,8 @@ El frontend consume una API REST en Spring Boot (`EXPO_PUBLIC_API_URL`, por defe
 | **Animaciones base sobre `Animated` + `cssInterop`** | Usar `react-native-reanimated` en todos los wrappers de layout | Evita errores de inicialización de worklets durante el static rendering SSR de `expo export -p web` manteniendo transiciones spring fluidas (`SpringPressable`, `FadeSlideIn`, `SkeletonBox`). |
 | **Sin `keepPreviousData` entre rangos de fechas distintos** | Mantener datos del periodo previo mientras carga el nuevo | Mostrar totales de *Este Mes* bajo la etiqueta *Mes Anterior* durante un cold-start induce errores de lectura financiera. Mostrar el skeleton específico del card garantiza integridad visual. |
 | **Rollback estricto en mutaciones autenticadas** | Fallback silencioso a datos locales ante errores HTTP | En modo autenticado ocultar un `400`/`500` crea datos fantasma que desaparecen al recargar. Se optó por rollback inmediato + notificación de error real, reservando la creación local exclusivamente para Modo Demo. |
+| **Sin auto-retry automático en `POST` por defecto (`EXPO_PUBLIC_BACKEND_IDEMPOTENT=false`)** | Reintentar `POST /transactions` automáticamente tras cada timeout | Mientras el backend no persista `Idempotency-Key`, un auto-retry tras un timeout ocurrido *después* del `INSERT` duplicaría el movimiento. Se eligió auto-retry solo en métodos naturalmente idempotentes (`GET`, `PUT`, `DELETE`) y reintento manual controlado con la misma clave en `POST`. |
+| **Timeout de `15 s` + gating del header `Idempotency-Key` en Web** | Timeout agresivo de `5 s` y envío incondicional del header HTTP | Un timeout de `5 s` provoca falsos negativos durante cold-starts de Render free-tier, y enviar `Idempotency-Key` en Web hoy fallaría el preflight CORS (`authorization, content-type`). Se calibró en `15 s` configurables y se preparó el header detrás de un feature flag. |
 
 ---
 
@@ -152,12 +192,11 @@ zentia-frontend/
 │   ├── context/                    # AuthContext (bootstrap, OAuth, OTP, 401 handler)
 │   ├── domain/                     # Modelos puros y puertos (Hexagonal Architecture)
 │   ├── infrastructure/adapters/    # HttpFinancialProfileAdapter & InMemoryFinancialProfileAdapter
-│   ├── hooks/                      # useDashboard, useCategories, useFinancialProfile y mutaciones
-│   ├── services/                   # api.ts, storage.ts, cacheStorage.ts, transactionCache.ts, biometrics.ts
+│   ├── hooks/                      # useDashboard, useCategories, useFinancialProfile, useIdempotencyKey y mutaciones
+│   ├── services/                   # api.ts, idempotency.ts, storage.ts, cacheStorage.ts, transactionCache.ts, biometrics.ts
 │   ├── types/                      # Contratos DTO TypeScript alineados con Spring Boot
 │   └── utils/                      # Formateo monetario tabular
 ├── docs/                           # PRD.md, SPRINTS.md, QA_CHECKLIST.md
-├── AGENTS.md                       # Directivas técnicas, tokens Figma y guías Apple HIG
 └── vercel.json                     # Build estático Web y rewrites SPA
 ```
 
@@ -173,6 +212,11 @@ Copia `.env.example` a `.env` y define los valores correspondientes:
 EXPO_PUBLIC_API_URL=https://zentia-backend-5l77.onrender.com/api/v1
 EXPO_PUBLIC_GOOGLE_CLIENT_ID=<tu-client-id-web>.apps.googleusercontent.com
 EXPO_PUBLIC_DEMO_URL=https://zentia.vercel.app
+
+# Opcionales para resiliencia e integración de idempotencia HTTP
+EXPO_PUBLIC_API_TIMEOUT_MS=15000
+EXPO_PUBLIC_ENABLE_IDEMPOTENCY_HEADER=false
+EXPO_PUBLIC_BACKEND_IDEMPOTENT=false
 ```
 
 > Nota: Para Google OAuth en Web es necesario autorizar el origen (`http://localhost:8081` en local y el dominio de producción en Vercel) dentro de Google Cloud Console.

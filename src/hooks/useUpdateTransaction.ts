@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { buildAuthCacheScope } from '@/services/cacheStorage';
+import { isDeviceOffline, runIdempotentOperation } from '@/services/idempotency';
 import {
   captureTransactionSnapshot,
   restoreTransactionSnapshot,
@@ -13,6 +14,7 @@ import { DEFAULT_CATEGORIES } from './useCategories';
 export interface UpdateTransactionVariables {
   transactionId: number;
   payload: UpdateTransactionRequest;
+  idempotencyKey?: string;
 }
 
 export function useUpdateTransaction() {
@@ -24,13 +26,24 @@ export function useUpdateTransaction() {
     mutationFn: async ({
       transactionId,
       payload,
+      idempotencyKey,
     }: UpdateTransactionVariables): Promise<TransactionResponse> => {
       if (isAuthenticated) {
-        const response = await api.put<TransactionResponse>(
-          `/transactions/${transactionId}`,
-          payload
-        );
-        return response.data;
+        return runIdempotentOperation({
+          scope: cacheScope,
+          operation: `tx:update:${transactionId}`,
+          method: 'PUT',
+          idempotencyKey,
+          requireOnline: true,
+          execute: async (key) => {
+            const response = await api.put<TransactionResponse>(
+              `/transactions/${transactionId}`,
+              payload,
+              { idempotencyKey: key }
+            );
+            return response.data;
+          },
+        });
       }
 
       const categories =
@@ -58,6 +71,10 @@ export function useUpdateTransaction() {
       };
     },
     onMutate: async ({ transactionId, payload }) => {
+      if (isAuthenticated && isDeviceOffline()) {
+        return { snapshot: undefined };
+      }
+
       await queryClient.cancelQueries({ queryKey: ['transactions'] });
       await queryClient.cancelQueries({ queryKey: ['dashboard'] });
 
@@ -90,8 +107,8 @@ export function useUpdateTransaction() {
         list.map((tx) => (tx.id === updatedTx.id ? { ...tx, ...updatedTx } : tx))
       );
     },
-    onSettled: () => {
-      if (isAuthenticated) {
+    onSettled: (_data, error) => {
+      if (isAuthenticated && !(error && isDeviceOffline())) {
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       }

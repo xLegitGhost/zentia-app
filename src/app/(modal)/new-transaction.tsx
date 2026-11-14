@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { X } from 'lucide-react-native';
 import { TransactionType } from '@/types/api';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateTransaction } from '@/hooks/useCreateTransaction';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { buildIntentFingerprint, classifyMutationError } from '@/services/idempotency';
 import { SegmentedTypeControl } from '@/components/finance/SegmentedTypeControl';
 import { MoneyInput } from '@/components/finance/MoneyInput';
 import { CategoryPicker } from '@/components/finance/CategoryPicker';
@@ -36,6 +38,8 @@ export default function NewTransactionModal() {
   // RN-FIN-03: Solo categorías compatibles con el tipo de transacción
   const { categories, allCategories } = useCategories(type);
   const createMutation = useCreateTransaction();
+  const submittingRef = useRef(false);
+  const submittedRef = useRef(false);
 
   const effectiveCategoryId = useMemo(() => {
     if (
@@ -46,6 +50,12 @@ export default function NewTransactionModal() {
     }
     return categories[0]?.id ?? null;
   }, [selectedCategoryId, categories]);
+
+  const intentFingerprint = useMemo(
+    () => buildIntentFingerprint([type, amount.trim(), effectiveCategoryId, description.trim()]),
+    [type, amount, effectiveCategoryId, description]
+  );
+  const { getKey } = useIdempotencyKey(intentFingerprint);
 
   const selectedCategoryName = useMemo(
     () => categories.find((cat) => cat.id === effectiveCategoryId)?.name,
@@ -72,6 +82,7 @@ export default function NewTransactionModal() {
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current || submittedRef.current) return;
     setValidationError(null);
     const numAmount = parseFloat(amount.replace(/,/g, ''));
 
@@ -86,6 +97,7 @@ export default function NewTransactionModal() {
       return;
     }
 
+    submittingRef.current = true;
     try {
       await createMutation.mutateAsync({
         amount: numAmount,
@@ -93,11 +105,19 @@ export default function NewTransactionModal() {
         categoryId: effectiveCategoryId,
         description: description.trim() || (type === 'EXPENSE' ? 'Gasto general' : 'Ingreso'),
         transactionDate: new Date().toISOString().split('T')[0],
+        idempotencyKey: getKey(),
       });
 
+      submittedRef.current = true;
       router.back();
-    } catch {
-      notifyError('Error', 'No se pudo registrar la transacción. Intenta de nuevo.');
+    } catch (error) {
+      const classified = classifyMutationError(
+        error,
+        'No se pudo registrar la transacción. Intenta de nuevo.'
+      );
+      notifyError(classified.title, classified.message);
+    } finally {
+      submittingRef.current = false;
     }
   };
 

@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { isTransientError } from '@/services/idempotency';
 import { AuthProvider } from '@/context/AuthContext';
 import { GoogleAuthProviderWrapper } from '@/components/auth/GoogleAuthProviderWrapper';
 import { BiometricLockGate } from '@/components/auth/BiometricLockGate';
@@ -17,10 +18,17 @@ export default function RootLayout() {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: 2,
+            retry: (failureCount, error) => failureCount < 2 && isTransientError(error),
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 4000),
             staleTime: 1000 * 60 * 2,
             gcTime: 1000 * 60 * 30,
             refetchOnWindowFocus: false,
+          },
+          mutations: {
+            // Permite ejecutar mutationFn offline para fallar rápido y mostrar mensaje RN-25 / CU-10 en lugar de pausar el botón
+            networkMode: 'always',
+            // Los reintentos seguros e idempotencia los coordina runIdempotentOperation (RN-20 / CU-10)
+            retry: 0,
           },
         },
       })

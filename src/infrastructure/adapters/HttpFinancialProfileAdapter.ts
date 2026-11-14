@@ -1,6 +1,7 @@
 import { FinancialProfile } from '@/domain/models/FinancialProfile';
 import { FinancialProfileRepositoryPort } from '@/domain/ports/FinancialProfileRepositoryPort';
 import { api } from '@/services/api';
+import { runIdempotentOperation } from '@/services/idempotency';
 
 interface BackendFinancialProfileResponse {
   userId?: number;
@@ -35,7 +36,10 @@ export class HttpFinancialProfileAdapter implements FinancialProfileRepositoryPo
     }
   }
 
-  async saveProfile(input: Omit<FinancialProfile, 'updatedAt'>): Promise<FinancialProfile> {
+  async saveProfile(
+    input: Omit<FinancialProfile, 'updatedAt'>,
+    idempotencyKey?: string
+  ): Promise<FinancialProfile> {
     const payload = {
       monthlyIncome: Number(input.monthlyIncome),
       monthlySavingsGoal: Number(input.monthlySavingsGoal),
@@ -45,8 +49,21 @@ export class HttpFinancialProfileAdapter implements FinancialProfileRepositoryPo
         input.priorityCategoryId != null ? Number(input.priorityCategoryId) : undefined,
     };
 
-    const response = await api.post<BackendFinancialProfileResponse>('/users/onboarding', payload);
-    const data = response.data;
+    const data = await runIdempotentOperation({
+      scope: 'onboarding',
+      operation: 'profile:save',
+      method: 'POST',
+      idempotencyKey,
+      requireOnline: true,
+      execute: async (key) => {
+        const response = await api.post<BackendFinancialProfileResponse>(
+          '/users/onboarding',
+          payload,
+          { idempotencyKey: key }
+        );
+        return response.data;
+      },
+    });
     return {
       monthlyIncome: Number(data.monthlyIncome ?? payload.monthlyIncome),
       monthlySavingsGoal: Number(data.monthlySavingsGoal ?? payload.monthlySavingsGoal),

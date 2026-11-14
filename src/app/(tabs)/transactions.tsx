@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   useDashboardSummary,
 } from '@/hooks/useDashboard';
 import { useDeleteTransaction } from '@/hooks/useDeleteTransaction';
+import { classifyMutationError } from '@/services/idempotency';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { SpringPressable } from '@/components/ui/SpringPressable';
@@ -47,6 +48,8 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deletingIdRef = useRef<number | null>(null);
 
   const activeRange = useMemo(
     () => getPeriodDateRange(selectedPeriod, customRange),
@@ -126,10 +129,20 @@ export default function TransactionsScreen() {
   };
 
   const handleConfirmDelete = async (id: number) => {
+    if (deletingIdRef.current === id) return;
+    deletingIdRef.current = id;
+    setDeleteError(null);
     try {
       await deleteMutation.mutateAsync(id);
-    } finally {
       setConfirmDeleteId(null);
+    } catch (error) {
+      const classified = classifyMutationError(
+        error,
+        'No se pudo eliminar el movimiento. Intenta de nuevo.'
+      );
+      setDeleteError(classified.message);
+    } finally {
+      deletingIdRef.current = null;
     }
   };
 
@@ -141,6 +154,15 @@ export default function TransactionsScreen() {
           Filtra, edita o elimina cada ingreso y gasto registrado.
         </Text>
       </View>
+
+      {deleteError ? (
+        <View className="bg-red-950/60 border border-red-900/80 rounded-2xl px-3.5 py-2.5 mb-3 flex-row items-center justify-between">
+          <Text className="text-red-300 text-xs flex-1 mr-2">{deleteError}</Text>
+          <Pressable onPress={() => setDeleteError(null)} className="p-1">
+            <X size={14} color="#FCA5A5" />
+          </Pressable>
+        </View>
+      ) : null}
 
       <PeriodSelector
         selectedPeriod={selectedPeriod}

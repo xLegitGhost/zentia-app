@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { buildAuthCacheScope } from '@/services/cacheStorage';
+import { isDeviceOffline, runIdempotentOperation } from '@/services/idempotency';
 import {
   captureTransactionSnapshot,
   getTransactionDate,
@@ -12,6 +13,11 @@ import {
 import { CategoryResponse, TransactionRequest, TransactionResponse } from '@/types/api';
 import { DEFAULT_CATEGORIES } from './useCategories';
 
+export type CreateTransactionVariables = TransactionRequest & {
+  _tempId?: number;
+  idempotencyKey?: string;
+};
+
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuth();
@@ -19,20 +25,33 @@ export function useCreateTransaction() {
 
   return useMutation({
     mutationFn: async (
-      payload: TransactionRequest & { _tempId?: number }
+      payload: CreateTransactionVariables
     ): Promise<TransactionResponse> => {
       const normalizedType =
         payload.type === 'INCOME' ? 'INGRESO' : payload.type === 'EXPENSE' ? 'GASTO' : payload.type;
 
       if (isAuthenticated) {
-        const response = await api.post<TransactionResponse>('/transactions', {
-          amount: payload.amount,
-          type: normalizedType,
-          categoryId: payload.categoryId,
-          description: payload.description,
-          transactionDate: payload.transactionDate,
+        return runIdempotentOperation({
+          scope: cacheScope,
+          operation: 'tx:create',
+          method: 'POST',
+          idempotencyKey: payload.idempotencyKey,
+          requireOnline: true,
+          execute: async (idempotencyKey) => {
+            const response = await api.post<TransactionResponse>(
+              '/transactions',
+              {
+                amount: payload.amount,
+                type: normalizedType,
+                categoryId: payload.categoryId,
+                description: payload.description,
+                transactionDate: payload.transactionDate,
+              },
+              { idempotencyKey }
+            );
+            return response.data;
+          },
         });
-        return response.data;
       }
 
       const categories =
@@ -53,6 +72,10 @@ export function useCreateTransaction() {
       };
     },
     onMutate: async (payload) => {
+      if (isAuthenticated && isDeviceOffline()) {
+        return { snapshot: undefined, tempId: undefined };
+      }
+
       await queryClient.cancelQueries({ queryKey: ['transactions'] });
       await queryClient.cancelQueries({ queryKey: ['dashboard'] });
 
@@ -97,8 +120,8 @@ export function useCreateTransaction() {
         return [newTx, ...withoutTemp];
       });
     },
-    onSettled: () => {
-      if (isAuthenticated) {
+    onSettled: (_data, error) => {
+      if (isAuthenticated && !(error && isDeviceOffline())) {
         queryClient.invalidateQueries({ queryKey: ['transactions'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       }

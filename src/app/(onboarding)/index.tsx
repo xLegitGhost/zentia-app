@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useFinancialProfile } from '@/hooks/useFinancialProfile';
 import { useCategories } from '@/hooks/useCategories';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { buildIntentFingerprint, classifyMutationError } from '@/services/idempotency';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
@@ -41,6 +43,13 @@ export default function OnboardingScreen() {
   const [selectedGoal, setSelectedGoal] = useState(GOALS[0]);
   const [syncError, setSyncError] = useState<string | null>(null);
   const hydratedProfile = useRef(Boolean(profile));
+  const submittingRef = useRef(false);
+
+  const intentFingerprint = useMemo(
+    () => buildIntentFingerprint([income, selectedCategory]),
+    [income, selectedCategory]
+  );
+  const { getKey } = useIdempotencyKey(intentFingerprint);
 
   useEffect(() => {
     if (!hydratedProfile.current && profile) {
@@ -66,20 +75,26 @@ export default function OnboardingScreen() {
   };
 
   const handleFinish = async () => {
+    if (submittingRef.current) return;
     setSyncError(null);
+    submittingRef.current = true;
     try {
       await saveProfile({
         monthlyIncome: Number(income) || 25000,
         monthlySavingsGoal: (Number(income) || 25000) * 0.2, // Meta sugerida del 20%
         priorityCategoryId: selectedCategory,
+        idempotencyKey: getKey(),
       });
       await completeOnboarding();
       router.replace('/(tabs)');
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.error ||
-        'No se pudo guardar tu onboarding en el servidor. Verifica tu conexión e intenta de nuevo.';
-      setSyncError(msg);
+    } catch (e: unknown) {
+      const classified = classifyMutationError(
+        e,
+        'No se pudo guardar tu onboarding en el servidor. Verifica tu conexión e intenta de nuevo.'
+      );
+      setSyncError(classified.message);
+    } finally {
+      submittingRef.current = false;
     }
   };
 

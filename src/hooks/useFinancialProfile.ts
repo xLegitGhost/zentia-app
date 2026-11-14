@@ -45,10 +45,13 @@ export function useFinancialProfile() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (data: Omit<FinancialProfile, 'updatedAt'>) => {
+    mutationFn: async (
+      input: Omit<FinancialProfile, 'updatedAt'> & { idempotencyKey?: string }
+    ) => {
+      const { idempotencyKey, ...data } = input;
       const localProfile = await financialProfileRepository.saveProfile(data);
       if (isAuthenticated) {
-        return await httpFinancialProfileRepository.saveProfile(data);
+        return await httpFinancialProfileRepository.saveProfile(data, idempotencyKey);
       }
       return localProfile;
     },

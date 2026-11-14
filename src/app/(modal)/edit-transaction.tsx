@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import { X } from 'lucide-react-native';
 import { TransactionType } from '@/types/api';
 import { useCategories } from '@/hooks/useCategories';
 import { useUpdateTransaction } from '@/hooks/useUpdateTransaction';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { buildIntentFingerprint, classifyMutationError } from '@/services/idempotency';
 import { SegmentedTypeControl } from '@/components/finance/SegmentedTypeControl';
 import { MoneyInput } from '@/components/finance/MoneyInput';
 import { CategoryPicker } from '@/components/finance/CategoryPicker';
@@ -41,6 +43,8 @@ export default function EditTransactionModal() {
 
   const { categories } = useCategories(txType);
   const updateMutation = useUpdateTransaction();
+  const submittingRef = useRef(false);
+  const submittedRef = useRef(false);
 
   // Resolver categoría inicial solo dentro de las categorías compatibles con el tipo (RN-FIN-03)
   const resolvedCategoryId = useMemo(() => {
@@ -64,6 +68,18 @@ export default function EditTransactionModal() {
       ? selectedCategoryId
       : resolvedCategoryId;
 
+  const intentFingerprint = useMemo(
+    () =>
+      buildIntentFingerprint([
+        transactionId,
+        amount.trim(),
+        effectiveCategoryId,
+        description.trim(),
+      ]),
+    [transactionId, amount, effectiveCategoryId, description]
+  );
+  const { getKey } = useIdempotencyKey(intentFingerprint);
+
   const notifyError = (title: string, message: string) => {
     setValidationError(message);
     if (Platform.OS !== 'web') {
@@ -72,6 +88,7 @@ export default function EditTransactionModal() {
   };
 
   const handleSave = async () => {
+    if (submittingRef.current || submittedRef.current) return;
     setValidationError(null);
     if (!transactionId) {
       notifyError('Error', 'Transacción no válida.');
@@ -89,18 +106,27 @@ export default function EditTransactionModal() {
       return;
     }
 
+    submittingRef.current = true;
     try {
       await updateMutation.mutateAsync({
         transactionId,
+        idempotencyKey: getKey(),
         payload: {
           categoryId: effectiveCategoryId,
           amount: numAmount,
           description: description.trim() || (isIncome ? 'Ingreso' : 'Gasto general'),
         },
       });
+      submittedRef.current = true;
       router.back();
-    } catch {
-      notifyError('Error', 'No se pudo actualizar la transacción. Intenta de nuevo.');
+    } catch (error) {
+      const classified = classifyMutationError(
+        error,
+        'No se pudo actualizar la transacción. Intenta de nuevo.'
+      );
+      notifyError(classified.title, classified.message);
+    } finally {
+      submittingRef.current = false;
     }
   };
 
