@@ -162,7 +162,16 @@ export const KaluriPromoCard: React.FC = () => {
       </View>
 
       <Text className="text-white text-base font-bold mb-1">
-        Also try Kaluri.app
+        Also try{' '}
+        <Text
+          className="text-zinc-500 text-sm font-medium line-through"
+          style={{ textDecorationLine: 'line-through' }}
+        >
+          Terraria
+        </Text>{' '}
+        <Text className="text-amber-300 font-extrabold tracking-wide">
+          KALURI.APP
+        </Text>
       </Text>
       <Text className="text-zinc-400 text-xs leading-relaxed mb-4">
         Así como cuidas tus finanzas en Zentia, lleva tus calorías y macros con IA desde una foto de tu comida.
