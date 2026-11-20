@@ -52,6 +52,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "test": "node scripts/run-tests.mjs",
     "generate:qr": "node scripts/generate-qr.mjs"
   },
   "private": true

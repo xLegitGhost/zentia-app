@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useDashboard';
 import { storage } from '@/services/storage';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
+import { ExchangeRateCard } from '@/components/dashboard/ExchangeRateCard';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { GuidedTutorialCard } from '@/components/dashboard/GuidedTutorialCard';
@@ -22,7 +23,6 @@ import {
   BalanceCardSkeleton,
   SavingsGoalSkeleton,
 } from '@/components/ui/Skeleton';
-import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { formatCurrency } from '@/utils/currency';
 
 const PERIOD_LABELS: Record<PeriodKey, string> = {
@@ -42,7 +42,6 @@ export default function DashboardScreen() {
   );
   const [tutorialDismissed, setTutorialDismissed] = useState(true);
   const [forceTutorial, setForceTutorial] = useState(false);
-  const [brandTaps, setBrandTaps] = useState(0);
 
   useEffect(() => {
     storage.getTutorialDismissed().then((dismissed) => {
@@ -105,14 +104,9 @@ export default function DashboardScreen() {
       >
         {/* Top Brand Bar */}
         <View className="flex-row items-center justify-between mb-5">
-          <Pressable
-            onPress={() => setBrandTaps((c) => c + 1)}
-            className="active:opacity-70"
-          >
-            <Text className="text-white text-xs font-bold tracking-[0.25em] uppercase opacity-70">
-              Z E N T I A
-            </Text>
-          </Pressable>
+          <Text className="text-white text-xs font-bold tracking-[0.25em] uppercase opacity-70">
+            Z E N T I A
+          </Text>
 
           <View className="flex-row items-center gap-2">
             <Pressable
@@ -138,13 +132,6 @@ export default function DashboardScreen() {
             </View>
           </View>
         </View>
-
-        {/* Easter Egg desbloqueado tras 3 taps en el título */}
-        {brandTaps >= 3 ? (
-          <FadeSlideIn className="mb-4">
-            <KaluriSplashBanner variant="card" seed={brandTaps} />
-          </FadeSlideIn>
-        ) : null}
 
         {/* Tutorial guiado (automático si no hay movimientos, o activado con ?) */}
         {showTutorial ? (
@@ -184,6 +171,11 @@ export default function DashboardScreen() {
             />
           </FadeSlideIn>
         )}
+
+        {/* Public FX Reference & Conversion Card */}
+        <FadeSlideIn delay={70}>
+          <ExchangeRateCard balanceActual={summary.balanceActual} />
+        </FadeSlideIn>
 
         {/* Savings Goal Card (Hexagonal In-Memory Feature) */}
         {!profile && isProfileLoading ? (
@@ -241,11 +233,6 @@ export default function DashboardScreen() {
             onAddFirst={() => router.push('/(modal)/new-transaction')}
           />
         </FadeSlideIn>
-
-        {/* Discreto splash de hermandad estilo Terraria / Minecraft */}
-        <View className="items-center pb-28 -mt-16">
-          <KaluriSplashBanner variant="minimal" seed={3} />
-        </View>
       </ScrollView>
 
       {/* Floating Add Action Button */}

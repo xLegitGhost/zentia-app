@@ -23,7 +23,6 @@ import { MoneyInput } from '@/components/finance/MoneyInput';
 import { CategoryPicker } from '@/components/finance/CategoryPicker';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
-import { KaluriFoodHint } from '@/components/ui/KaluriEasterEgg';
 
 export default function NewTransactionModal() {
   const router = useRouter();
@@ -31,7 +30,6 @@ export default function NewTransactionModal() {
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [hasPickedCategory, setHasPickedCategory] = useState(false);
   const [description, setDescription] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -57,15 +55,9 @@ export default function NewTransactionModal() {
   );
   const { getKey } = useIdempotencyKey(intentFingerprint);
 
-  const selectedCategoryName = useMemo(
-    () => categories.find((cat) => cat.id === effectiveCategoryId)?.name,
-    [categories, effectiveCategoryId]
-  );
-
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
     setValidationError(null);
-    setHasPickedCategory(false);
     const isTargetIncome = newType === 'INCOME' || newType === 'INGRESO';
     const available = allCategories.find((c) => {
       const isCatIncome = c.type === 'INCOME' || c.type === 'INGRESO';
@@ -154,12 +146,9 @@ export default function NewTransactionModal() {
             selectedId={effectiveCategoryId}
             onSelect={(id) => {
               setSelectedCategoryId(id);
-              setHasPickedCategory(true);
             }}
           />
         </FadeSlideIn>
-
-        <KaluriFoodHint categoryName={selectedCategoryName} visible={hasPickedCategory} />
 
         <FadeSlideIn delay={140}>
           <View className="bg-[#121214] border border-zinc-800/90 rounded-2xl p-4 mb-6">

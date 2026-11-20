@@ -8,7 +8,6 @@ import { logSafeWarning } from '@/services/security';
 import { GoogleLogo } from '@/components/ui/GoogleLogo';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { FadeSlideIn } from '@/components/ui/FadeSlideIn';
-import { KaluriSplashBanner } from '@/components/ui/KaluriEasterEgg';
 import { useGoogleLogin } from '@react-oauth/google';
 
 export default function LoginScreen() {
@@ -158,9 +157,8 @@ export default function LoginScreen() {
         ) : null}
       </FadeSlideIn>
 
-      {/* Footer Legal Terms (Figma Spec) + Sibling Splash */}
-      <View className="items-center px-4 pb-2 gap-3">
-        <KaluriSplashBanner variant="minimal" seed={0} />
+      {/* Footer Legal Terms (Figma Spec) */}
+      <View className="items-center px-4 pb-2">
         <Text className="text-zinc-500 text-[11px] text-center leading-relaxed">
           Al iniciar sesión aceptas las{' '}
           <Text className="text-yellow-500 underline font-medium">políticas de privacidad</Text>

@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 const CACHE_PREFIX = 'zentia_cache_v1:';
-const PUBLIC_CACHE_KEYS = new Set(['categories']);
+const PUBLIC_CACHE_KEYS = new Set(['categories', 'fx_rates_mxn']);
 
 interface CacheEnvelope<T> {
   data: T;
